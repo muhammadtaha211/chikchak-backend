@@ -1,0 +1,38 @@
+package com.chikchak.model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+// Chat Message Entity
+@Entity
+@Table(name = "chat_messages")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ChatMessage extends BaseEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
+
+    @Column(name = "message", columnDefinition = "TEXT", nullable = false)
+    private String message;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private MessageType messageType = MessageType.TEXT;
+
+    @Column(name = "is_read")
+    @Builder.Default
+    private Boolean isRead = false;
+
+    @Column(name = "attachment_url")
+    private String attachmentUrl;
+}
