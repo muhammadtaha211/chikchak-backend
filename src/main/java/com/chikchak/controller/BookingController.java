@@ -62,4 +62,33 @@ public class BookingController {
         BookingDto booking = bookingService.updateBookingStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success("Booking status updated", booking));
     }
+
+
+    // Technician proposes new time
+    @PostMapping("/{id}/propose-time")
+    @Operation(summary = "Propose new time", description = "Technician proposes different time")
+    public ResponseEntity<ApiResponse<BookingDto>> proposeTime(
+            @PathVariable Long id,
+            @Valid @RequestBody ProposeTimeRequest request) {
+        BookingDto booking = bookingService.proposeTime(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Time proposed", booking));
+    }
+
+    // Customer accepts proposed time
+    @PostMapping("/{id}/accept-proposed-time")
+    @Operation(summary = "Accept proposed time", description = "Customer accepts the proposed time")
+    public ResponseEntity<ApiResponse<BookingDto>> acceptProposedTime(@PathVariable Long id) {
+        BookingDto booking = bookingService.acceptProposedTime(id);
+        return ResponseEntity.ok(ApiResponse.success("Time accepted", booking));
+    }
+
+    // Customer declines (cancels booking)
+    @PostMapping("/{id}/decline-booking")
+    @Operation(summary = "Decline booking", description = "Customer declines and cancels booking")
+    public ResponseEntity<ApiResponse<String>> declineBooking(
+            @PathVariable Long id,
+            @Valid @RequestBody RefundChoiceRequest request) {
+        bookingService.declineAndRefund(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Booking cancelled, refund processed", null));
+    }
 }

@@ -1,11 +1,7 @@
 package com.chikchak.mapper;
 
-import com.chikchak.dto.BookingDto;
-import com.chikchak.dto.ChatMessageDto;
-import com.chikchak.dto.PaymentTransactionDto;
-import com.chikchak.model.Booking;
-import com.chikchak.model.ChatMessage;
-import com.chikchak.model.PaymentTransaction;
+import com.chikchak.dto.*;
+import com.chikchak.model.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -47,4 +43,11 @@ public interface BookingMapper {
         }
         return String.join(",", value);
     }
+
+
+    // Chat mapping methods
+    ChatDto toDto(Chat chat);
+    Chat toEntity(ChatDto chatDto);
+
+
 }

@@ -109,9 +109,13 @@ public class Booking extends BaseEntity {
     private Boolean isEmergency = false;
 
     // Relationships
-    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ChatMessage> chatMessages;
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Chat chat;
+
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<BookingStatusHistory> statusHistory;
+
+    @Column(name = "proposed_datetime")
+    private LocalDateTime proposedDatetime; // For time change proposals
 }

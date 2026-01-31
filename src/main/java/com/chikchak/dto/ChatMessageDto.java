@@ -1,5 +1,6 @@
 package com.chikchak.dto;
 
+import com.chikchak.dto.UserDto;
 import com.chikchak.model.MessageType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -9,14 +10,14 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// Chat DTOs
+// Updated ChatMessageDto to include chat reference
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ChatMessageDto {
     private Long id;
-    private Long bookingId;
+    private Long chatId;
     private UserDto sender;
     private String message;
     private MessageType messageType;

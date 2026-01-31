@@ -1,5 +1,6 @@
 package com.chikchak.service;
 
+import com.chikchak.model.Booking;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -110,5 +111,15 @@ public class NotificationService {
                                             com.chikchak.model.Booking booking, String message) {
         log.info("Sending notification to technician {}: {}",
                 technician.getUser().getEmail(), message);
+    }
+    public void notifyCustomerTimeProposal(Booking booking) {
+        log.info("Notifying customer {} about time proposal for booking {}",
+                booking.getCustomer().getEmail(), booking.getBookingNumber());
+
+        // TODO: Implement actual notification (push, SMS, email)
+        // For now, just logging
+    }
+
+    public void notifyTechnicianTimeAccepted(Booking booking) {
     }
 }

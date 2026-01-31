@@ -37,6 +37,7 @@ public class BookingService {
     private final BookingMapper bookingMapper;
     private final NotificationService notificationService;
     private final PricingService pricingService;
+    private final ChatService chatService;
 
     @Value("${chikchak.service-fee:20}")
     private BigDecimal serviceFee;
@@ -446,5 +447,97 @@ public class BookingService {
                 .totalBookings(totalBookings.intValue())
                 .completedBookings(completedBookings.intValue())
                 .build();
+    }
+
+    public BookingDto proposeTime(Long bookingId, ProposeTimeRequest request) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.TECHNICIAN) {
+            throw new ChikChakException("Only technicians can propose times");
+        }
+
+        Booking booking = findBookingById(bookingId);
+
+        // Update booking
+        booking.setProposedDatetime(request.getProposedDatetime());
+        booking.setStatus(BookingStatus.TIME_DISCUSSION);
+        booking = bookingRepository.save(booking);
+
+        // Create TIME_PROPOSAL message in chat
+        chatService.sendTimeProposalMessage(
+                bookingId,
+                request.getProposedDatetime(),
+                request.getMessage()
+        );
+
+        // Notify customer
+        notificationService.notifyCustomerTimeProposal(booking);
+
+        log.info("Time proposed for booking {}: {}", bookingId, request.getProposedDatetime());
+
+        return bookingMapper.toDto(booking);
+    }
+
+    public BookingDto acceptProposedTime(Long bookingId) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.CUSTOMER) {
+            throw new ChikChakException("Only customers can accept proposals");
+        }
+
+        Booking booking = findBookingById(bookingId);
+
+        if (booking.getProposedDatetime() == null) {
+            throw new ChikChakException("No time proposal to accept");
+        }
+
+        // Accept the proposal
+        booking.setScheduledDatetime(booking.getProposedDatetime());
+        booking.setProposedDatetime(null); // Clear proposal
+        booking.setStatus(BookingStatus.ACCEPTED);
+        booking = bookingRepository.save(booking);
+
+        // Send confirmation message
+        chatService.sendBookingUpdateMessage(
+                bookingId,
+                "TIME_ACCEPTED",
+                "Time confirmed: " + booking.getScheduledDatetime()
+        );
+
+        // Notify technician
+        notificationService.notifyTechnicianTimeAccepted(booking);
+
+        log.info("Time accepted for booking {}", bookingId);
+
+        return bookingMapper.toDto(booking);
+    }
+
+    public void declineAndRefund(Long bookingId, RefundChoiceRequest request) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        Booking booking = findBookingById(bookingId);
+        validateBookingAccess(booking, currentUser);
+
+        // Cancel booking
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setProposedDatetime(null);
+        bookingRepository.save(booking);
+
+        // Process refund based on choice
+        if (request.getRefundMethod() == RefundMethod.CREDITS) {
+            // Add to account credits
+            currentUser.setAccountCredits(
+                    currentUser.getAccountCredits().add(booking.getTotalAmount())
+            );
+            userRepository.save(currentUser);
+        } else {
+            // Process bank refund (integrate with payment gateway)
+            // paymentService.processRefund(booking);
+        }
+
+        // Notify technician
+        notificationService.notifyBookingCancellation(booking);
+
+        log.info("Booking {} cancelled with {} refund", bookingId, request.getRefundMethod());
     }
 }

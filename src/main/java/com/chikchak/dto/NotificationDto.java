@@ -1,11 +1,11 @@
-
-// Supporting DTOs
 package com.chikchak.dto;
 
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -16,5 +16,5 @@ public class NotificationDto {
     private Long bookingId;
     private String message;
     private String timestamp;
-    private Object data;
+    private Map<String, Object> data;
 }

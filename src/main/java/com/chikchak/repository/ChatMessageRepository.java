@@ -12,13 +12,14 @@ import java.util.List;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-    List<ChatMessage> findByBookingIdOrderByCreatedAtAsc(Long bookingId);
 
-    List<ChatMessage> findByBookingIdAndIsReadFalse(Long bookingId);
+    List<ChatMessage> findByChatIdOrderByCreatedAtAsc(Long chatId);
 
-    @Query("SELECT COUNT(m) FROM ChatMessage m WHERE m.booking.id = :bookingId AND m.sender.id != :userId AND m.isRead = false")
-    Long countUnreadMessagesForUser(@Param("bookingId") Long bookingId, @Param("userId") Long userId);
+    @Query("SELECT cm FROM ChatMessage cm WHERE cm.chat.id = :chatId ORDER BY cm.createdAt ASC")
+    Page<ChatMessage> findByChatIdOrderByCreatedAtAsc(@Param("chatId") Long chatId, Pageable pageable);
 
-    @Query("SELECT m FROM ChatMessage m WHERE m.booking.id = :bookingId ORDER BY m.createdAt ASC")
-    Page<ChatMessage> findByBookingIdOrderByCreatedAtAsc(@Param("bookingId") Long bookingId, Pageable pageable);
+    List<ChatMessage> findByChatIdAndIsReadFalse(Long chatId);
+
+    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.chat.id = :chatId AND cm.sender.id != :userId AND cm.isRead = false")
+    Long countUnreadMessagesForUser(@Param("chatId") Long chatId, @Param("userId") Long userId);
 }

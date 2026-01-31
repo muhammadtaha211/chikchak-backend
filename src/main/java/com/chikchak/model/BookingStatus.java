@@ -2,7 +2,8 @@ package com.chikchak.model;
 
 public enum BookingStatus {
     PENDING,           // Initial status when booking is created
-    TECHNICIAN_NOTIFIED, // Technician has been notified
+    TECHNICIAN_NOTIFIED,  // Technician has been notified
+    TIME_DISCUSSION,    // Technician requested a time change.
     ACCEPTED,          // Technician accepted the job
     SCHEDULED,         // Time has been agreed upon
     ON_THE_WAY,       // Technician is traveling to location

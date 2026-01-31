@@ -26,51 +26,84 @@ public class ChatController {
 
     private final ChatService chatService;
 
+    // New chat-based endpoints
     @PostMapping("/send")
-    @Operation(summary = "Send message", description = "Send a chat message in a booking")
-    public ResponseEntity<ApiResponse<ChatMessageDto>> sendMessage(@Valid @RequestBody SendMessageRequest request) {
+    @Operation(summary = "Send message", description = "Send a chat message")
+    public ResponseEntity<ApiResponse<ChatMessageDto>> sendMessage(@Valid @RequestBody SendChatMessageRequest request) {
         ChatMessageDto message = chatService.sendMessage(request);
         return ResponseEntity.ok(ApiResponse.success("Message sent successfully", message));
     }
 
+    @GetMapping("/my-chats")
+    @Operation(summary = "Get user's chats", description = "Get all chats for the current user")
+    public ResponseEntity<ApiResponse<List<ChatDto>>> getUserChats() {
+        List<ChatDto> chats = chatService.getUserChats();
+        return ResponseEntity.ok(ApiResponse.success(chats));
+    }
+
+    @GetMapping("/{chatId}")
+    @Operation(summary = "Get chat details", description = "Get chat details by chat ID")
+    public ResponseEntity<ApiResponse<ChatDto>> getChatById(@PathVariable Long chatId) {
+        ChatDto chat = chatService.getChatById(chatId);
+        return ResponseEntity.ok(ApiResponse.success(chat));
+    }
+
+    @GetMapping("/{chatId}/messages")
+    @Operation(summary = "Get chat messages", description = "Get all messages in a chat")
+    public ResponseEntity<ApiResponse<List<ChatMessageDto>>> getChatMessages(
+            @PathVariable Long chatId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        List<ChatMessageDto> messages;
+        if (page == 0 && size == 50) {
+            // Get all messages
+            messages = chatService.getChatMessages(chatId);
+        } else {
+            // Get paginated messages
+            Pageable pageable = PageRequest.of(page, size);
+            messages = chatService.getChatMessages(chatId, pageable);
+        }
+        return ResponseEntity.ok(ApiResponse.success(messages));
+    }
+
+    @PostMapping("/{chatId}/mark-read")
+    @Operation(summary = "Mark messages as read", description = "Mark all unread messages in a chat as read")
+    public ResponseEntity<ApiResponse<String>> markMessagesAsRead(@PathVariable Long chatId) {
+        chatService.markMessagesAsRead(chatId);
+        return ResponseEntity.ok(ApiResponse.success("Messages marked as read", null));
+    }
+
+    @GetMapping("/{chatId}/unread-count")
+    @Operation(summary = "Get unread count", description = "Get count of unread messages in a chat")
+    public ResponseEntity<ApiResponse<Long>> getUnreadMessageCount(@PathVariable Long chatId) {
+        Long count = chatService.getUnreadMessageCount(chatId);
+        return ResponseEntity.ok(ApiResponse.success(count));
+    }
+
+    // Backward compatibility endpoints - these still work with booking IDs
     @GetMapping("/booking/{bookingId}")
-    @Operation(summary = "Get booking messages", description = "Get all messages for a booking")
+    @Operation(summary = "Get booking messages", description = "Get all messages for a booking (legacy)")
     public ResponseEntity<ApiResponse<List<ChatMessageDto>>> getBookingMessages(
             @PathVariable Long bookingId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
 
+        List<ChatMessageDto> messages;
         if (page == 0 && size == 50) {
-            // Get all messages
-            List<ChatMessageDto> messages = chatService.getBookingMessages(bookingId);
-            return ResponseEntity.ok(ApiResponse.success(messages));
+            messages = chatService.getBookingMessages(bookingId);
         } else {
-            // Get paginated messages
             Pageable pageable = PageRequest.of(page, size);
-            List<ChatMessageDto> messages = chatService.getBookingMessages(bookingId, pageable);
-            return ResponseEntity.ok(ApiResponse.success(messages));
+            messages = chatService.getBookingMessages(bookingId, pageable);
         }
-    }
-
-    @PostMapping("/booking/{bookingId}/mark-read")
-    @Operation(summary = "Mark messages as read", description = "Mark all unread messages in a booking as read")
-    public ResponseEntity<ApiResponse<String>> markMessagesAsRead(@PathVariable Long bookingId) {
-        chatService.markMessagesAsRead(bookingId);
-        return ResponseEntity.ok(ApiResponse.success("Messages marked as read", null));
-    }
-
-    @GetMapping("/booking/{bookingId}/unread-count")
-    @Operation(summary = "Get unread count", description = "Get count of unread messages in a booking")
-    public ResponseEntity<ApiResponse<Long>> getUnreadMessageCount(@PathVariable Long bookingId) {
-        Long count = chatService.getUnreadMessageCount(bookingId);
-        return ResponseEntity.ok(ApiResponse.success(count));
+        return ResponseEntity.ok(ApiResponse.success(messages));
     }
 
     // WebSocket endpoints
-    @MessageMapping("/chat/{bookingId}")
-    @SendTo("/topic/booking/{bookingId}")
-    public ChatMessageDto handleMessage(@DestinationVariable Long bookingId, @Payload SendMessageRequest request) {
-        request.setBookingId(bookingId);
+    @MessageMapping("/chat/{chatId}")
+    @SendTo("/topic/chat/{chatId}")
+    public ChatMessageDto handleMessage(@DestinationVariable Long chatId, @Payload SendChatMessageRequest request) {
+        request.setChatId(chatId);
         return chatService.sendMessage(request);
     }
 }
