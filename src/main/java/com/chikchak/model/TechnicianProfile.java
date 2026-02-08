@@ -40,7 +40,7 @@ public class TechnicianProfile extends BaseEntity {
     private Boolean isAvailable = true;
 
     @Column(name = "average_rating", precision = 3, scale = 2)
-    private BigDecimal averageRating;
+    private BigDecimal averageRating=BigDecimal.ZERO;
 
     @Column(name = "total_jobs")
     @Builder.Default
@@ -48,7 +48,7 @@ public class TechnicianProfile extends BaseEntity {
 
     // Working hours (JSON format or separate entity)
     @Column(name = "working_hours", columnDefinition = "TEXT")
-    private String workingHours; // JSON: {"monday": {"start": "08:00", "end": "18:00"}, ...}
+    private String workingHours=""; // JSON: {"monday": {"start": "08:00", "end": "18:00"}, ...}
 
     // Service radius in kilometers
     @Column(name = "service_radius")

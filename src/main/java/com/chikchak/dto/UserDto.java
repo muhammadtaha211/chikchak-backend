@@ -2,6 +2,7 @@ package com.chikchak.dto;
 
 import com.chikchak.model.UserRole;
 import com.chikchak.model.UserStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,8 +30,10 @@ public class UserDto {
     private Double latitude;
     private Double longitude;
     private BigDecimal accountCredits;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
-    private TechnicianProfileDto technicianProfile;
+    
 }
 
 

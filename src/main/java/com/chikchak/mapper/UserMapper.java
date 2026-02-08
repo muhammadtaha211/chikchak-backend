@@ -18,6 +18,7 @@ public interface UserMapper {
     User toEntity(UserDto userDto);
 
     @Mapping(target = "distanceFromCustomer", ignore = true)
+    @Mapping(source = "user", target = "user")
     TechnicianProfileDto toDto(TechnicianProfile technicianProfile);
 
     TechnicianProfile toEntity(TechnicianProfileDto technicianProfileDto);

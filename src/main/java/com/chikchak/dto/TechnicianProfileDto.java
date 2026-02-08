@@ -25,4 +25,5 @@ public class TechnicianProfileDto {
     private String workingHours;
     private Set<ServiceCategoryDto> services;
     private Double distanceFromCustomer; // Calculated field
+    private UserDto user;
 }
