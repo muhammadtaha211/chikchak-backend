@@ -44,4 +44,16 @@ public class CreateBookingRequest {
     private List<String> photos;
     private String customerNotes;
     private Boolean isEmergency = false;
+
+    private String directions; // Directions to customer's house
+
+    @NotNull(message = "Technician selection is required")
+    private Long selectedTechnicianId; // Which technician customer selected
+
+    @Builder.Default
+    private Boolean useAccountCredits = false; // Use credits for payment
+
+    @NotBlank(message = "Payment method is required")
+    private String paymentMethod; // "CREDIT_CARD", "DEBIT_CARD", etc.
+
 }

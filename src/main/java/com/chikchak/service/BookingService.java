@@ -12,15 +12,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-
 
 @Service
 @RequiredArgsConstructor
@@ -42,273 +40,434 @@ public class BookingService {
     @Value("${chikchak.service-fee:20}")
     private BigDecimal serviceFee;
 
+    // ⭐ NEW METHOD: Calculate Booking Price (before creating booking)
+    public PricingCalculationDto calculateBookingPrice(PriceCalculationRequest request) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        // Get technician profile
+        TechnicianProfile technician = technicianProfileRepository.findById(request.getTechnicianId())
+                .orElseThrow(() -> new ChikChakException("Technician not found"));
+
+        // Calculate base pricing
+        PricingService.PricingCalculation pricing = pricingService.calculateBookingPrice(
+                request.getCustomerLatitude(),
+                request.getCustomerLongitude(),
+                technician.getUser().getLatitude(),
+                technician.getUser().getLongitude(),
+                technician.getBaseDiagnosisFee()
+        );
+
+        // Build response DTO
+        PricingCalculationDto result = PricingCalculationDto.builder()
+                .diagnosisFee(pricing.getDiagnosisFee())
+                .distanceKm(pricing.getDistanceKm())
+                .distanceFee(pricing.getDistanceFee())
+                .serviceFee(pricing.getServiceFee())
+                .totalAmount(pricing.getTotalAmount())
+                .creditsApplied(BigDecimal.ZERO)
+                .finalTotal(pricing.getTotalAmount())
+                .build();
+
+        // Apply credits if requested
+        if (request.getUseCredits() && currentUser.getAccountCredits().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal creditsToUse = currentUser.getAccountCredits().min(pricing.getTotalAmount());
+            result.setCreditsApplied(creditsToUse);
+            result.setFinalTotal(pricing.getTotalAmount().subtract(creditsToUse));
+        }
+
+        log.info("Price calculated for technician {} and customer {}: Total={}, Credits={}, Final={}",
+                technician.getId(), currentUser.getId(),
+                result.getTotalAmount(), result.getCreditsApplied(), result.getFinalTotal());
+
+        return result;
+    }
+
+    // ⭐ UPDATED METHOD: Create Booking (with technician pre-selected)
     public BookingDto createBooking(CreateBookingRequest request) {
         User customer = authService.getCurrentUserEntity();
-        
+
         if (customer.getRole() != UserRole.CUSTOMER) {
             throw new ChikChakException("Only customers can create bookings");
         }
 
         ServiceCategory serviceCategory = serviceCategoryRepository.findById(request.getServiceCategoryId())
-            .orElseThrow(() -> new ChikChakException("Service category not found"));
+                .orElseThrow(() -> new ChikChakException("Service category not found"));
 
-        // Find available technicians for this service and location
-        List<TechnicianProfile> availableTechnicians = technicianProfileRepository
-            .findBestTechniciansForServiceAndLocation(
-                request.getServiceCategoryId(),
+        // Get the selected technician
+        TechnicianProfile selectedTechnician = technicianProfileRepository.findById(request.getSelectedTechnicianId())
+                .orElseThrow(() -> new ChikChakException("Selected technician not found"));
+
+        // Verify technician is available and verified
+        if (!selectedTechnician.getIsVerified()) {
+            throw new ChikChakException("Selected technician is not verified");
+        }
+        if (!selectedTechnician.getIsAvailable()) {
+            throw new ChikChakException("Selected technician is not currently available");
+        }
+
+        // Calculate pricing
+        PricingService.PricingCalculation pricing = pricingService.calculateBookingPrice(
                 request.getServiceLatitude(),
-                request.getServiceLongitude()
-            );
+                request.getServiceLongitude(),
+                selectedTechnician.getUser().getLatitude(),
+                selectedTechnician.getUser().getLongitude(),
+                selectedTechnician.getBaseDiagnosisFee()
+        );
 
-        if (availableTechnicians.isEmpty()) {
-            throw new ChikChakException("No technicians available for this service in your area");
+        // Create booking number
+        String bookingNumber = generateBookingNumber();
+
+        // Build customer notes (combine directions if provided)
+        String fullCustomerNotes = request.getCustomerNotes();
+        if (request.getDirections() != null && !request.getDirections().trim().isEmpty()) {
+            fullCustomerNotes = (fullCustomerNotes != null ? fullCustomerNotes + "\n\nDirections: " : "Directions: ")
+                    + request.getDirections();
         }
 
         // Create booking
-        String bookingNumber = generateBookingNumber();
-        
         Booking booking = Booking.builder()
-            .bookingNumber(bookingNumber)
-            .customer(customer)
-            .serviceCategory(serviceCategory)
-            .problemDescription(request.getProblemDescription())
-            .status(BookingStatus.PENDING)
-            .urgency(request.getUrgency())
-            .serviceAddress(request.getServiceAddress())
-            .serviceCity(request.getServiceCity())
-            .serviceLatitude(request.getServiceLatitude())
-            .serviceLongitude(request.getServiceLongitude())
-            .preferredDatetime(request.getPreferredDatetime())
-            .isEmergency(request.getIsEmergency())
-            .customerNotes(request.getCustomerNotes())
-            .serviceFee(serviceFee)
-            .paymentStatus(PaymentStatus.PENDING)
-            .build();
+                .bookingNumber(bookingNumber)
+                .customer(customer)
+                .technician(selectedTechnician)
+                .serviceCategory(serviceCategory)
+                .problemDescription(request.getProblemDescription())
+                .status(BookingStatus.PENDING) // Awaiting technician confirmation
+                .urgency(request.getUrgency())
+                .serviceAddress(request.getServiceAddress())
+                .serviceCity(request.getServiceCity())
+                .serviceLatitude(request.getServiceLatitude())
+                .serviceLongitude(request.getServiceLongitude())
+                .preferredDatetime(request.getPreferredDatetime())
+                .scheduledDatetime(null) // Not scheduled until technician accepts
+                .isEmergency(request.getIsEmergency())
+                .customerNotes(fullCustomerNotes)
+                // Set pricing
+                .diagnosisFee(pricing.getDiagnosisFee())
+                .serviceFee(pricing.getServiceFee())
+                .distanceKm(pricing.getDistanceKm())
+                .distanceFee(pricing.getDistanceFee())
+                .totalAmount(pricing.getTotalAmount())
+                // Set payment info
+                .paymentMethod(request.getPaymentMethod())
+                .paymentStatus(PaymentStatus.PENDING) // Held until technician accepts
+                .build();
 
         if (request.getPhotos() != null && !request.getPhotos().isEmpty()) {
             booking.setPhotos(String.join(",", request.getPhotos()));
         }
 
         booking = bookingRepository.save(booking);
-        
+
         // Create status history
-        createStatusHistory(booking, null, BookingStatus.PENDING, "Booking created");
-        
-        // Notify technicians
-        notificationService.notifyTechniciansOfNewBooking(booking, availableTechnicians);
-        
-        log.info("New booking created: {} by customer: {}", bookingNumber, customer.getEmail());
-        
+        createStatusHistory(booking, null, BookingStatus.PENDING,
+                "Booking created - awaiting technician confirmation");
+
+        // Apply credits if requested
+        if (request.getUseAccountCredits() && customer.getAccountCredits().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal creditsToUse = customer.getAccountCredits().min(pricing.getTotalAmount());
+
+            // Deduct from customer account
+            customer.setAccountCredits(customer.getAccountCredits().subtract(creditsToUse));
+            userRepository.save(customer);
+
+            // Reduce total amount
+            booking.setTotalAmount(booking.getTotalAmount().subtract(creditsToUse));
+            booking = bookingRepository.save(booking);
+
+            log.info("Applied {} credits to booking {}", creditsToUse, bookingNumber);
+        }
+
+        // Create chat immediately
+        Chat chat = chatService.findOrCreateChatForBooking(booking.getId());
+
+        // Send initial booking notification in chat
+        chatService.sendBookingUpdateMessage(
+                booking.getId(),
+                "BOOKING_CREATED",
+                String.format("New booking request for %s on %s",
+                        serviceCategory.getName(),
+                        booking.getPreferredDatetime().format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))
+                )
+        );
+
+        // Notify technician
+        notificationService.notifyTechnicianOfNewBooking(booking);
+
+        log.info("Booking created (PENDING): {} for technician: {} by customer: {}",
+                bookingNumber, selectedTechnician.getUser().getEmail(), customer.getEmail());
+
         return bookingMapper.toDto(booking);
     }
 
+    // UPDATED METHOD: Technician responds to booking
+    public BookingDto respondToBooking(TechnicianResponseRequest request) {
+        User currentUser = authService.getCurrentUserEntity();
 
+        if (currentUser.getRole() != UserRole.TECHNICIAN) {
+            throw new ChikChakException("Only technicians can respond to bookings");
+        }
 
+        TechnicianProfile technician = technicianProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
 
+        Booking booking = findBookingById(request.getBookingId());
 
+        // Verify this booking is for this technician
+        if (!booking.getTechnician().getId().equals(technician.getId())) {
+            throw new ChikChakException("This booking is not assigned to you");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new ChikChakException("This booking is no longer pending");
+        }
+
+        switch (request.getResponseType()) {
+            case ACCEPT:
+                return acceptBooking(booking, request.getSuggestedTime());
+            case DISCUSS_TIME:
+                return discussBookingTime(booking, request.getSuggestedTime(), request.getMessage());
+            case DECLINE:
+                return declineBooking(booking, request.getMessage());
+            default:
+                throw new ChikChakException("Invalid response type");
+        }
+    }
+
+    private BookingDto acceptBooking(Booking booking, LocalDateTime suggestedTime) {
+        // Use suggested time if provided, otherwise use preferred time
+        if (suggestedTime != null) {
+            booking.setScheduledDatetime(suggestedTime);
+        } else {
+            booking.setScheduledDatetime(booking.getPreferredDatetime());
+        }
+
+        booking.setStatus(BookingStatus.SCHEDULED);
+        booking = bookingRepository.save(booking);
+
+        createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.SCHEDULED,
+                "Technician accepted booking");
+
+        // Send chat message
+        chatService.sendBookingUpdateMessage(
+                booking.getId(),
+                "BOOKING_ACCEPTED",
+                "Technician accepted! Scheduled for " +
+                        booking.getScheduledDatetime().format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))
+        );
+
+        // Notify customer
+        notificationService.notifyCustomerBookingAccepted(booking);
+
+        log.info("Booking {} accepted by technician", booking.getBookingNumber());
+
+        return bookingMapper.toDto(booking);
+    }
+
+    private BookingDto discussBookingTime(Booking booking, LocalDateTime suggestedTime, String message) {
+        booking.setStatus(BookingStatus.TIME_DISCUSSION);
+        booking.setProposedDatetime(suggestedTime);
+        booking = bookingRepository.save(booking);
+
+        createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.TIME_DISCUSSION,
+                "Technician requested time discussion");
+
+        // Send time proposal in chat
+        chatService.sendTimeProposalMessage(
+                booking.getId(),
+                suggestedTime,
+                message
+        );
+
+        // Notify customer
+        notificationService.notifyCustomerTimeProposal(booking);
+
+        log.info("Technician requested time discussion for booking {}", booking.getBookingNumber());
+
+        return bookingMapper.toDto(booking);
+    }
+
+    private BookingDto declineBooking(Booking booking, String reason) {
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking = bookingRepository.save(booking);
+
+        createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.CANCELLED,
+                "Technician declined: " + (reason != null ? reason : "No reason provided"));
+
+        // Initiate refund process
+        initiateRefundProcess(booking);
+
+        // Send chat message
+        chatService.sendBookingUpdateMessage(
+                booking.getId(),
+                "BOOKING_DECLINED",
+                "Technician declined this booking. " +
+                        (reason != null ? "Reason: " + reason : "")
+        );
+
+        // Notify customer to choose refund method
+        notificationService.notifyCustomerBookingDeclined(booking);
+
+        log.info("Booking {} declined by technician: {}", booking.getBookingNumber(), reason);
+
+        return bookingMapper.toDto(booking);
+    }
+
+    //  Initiate refund for declined booking
+    private void initiateRefundProcess(Booking booking) {
+        // Mark payment as ready for refund
+        booking.setPaymentStatus(PaymentStatus.REFUNDED);
+        bookingRepository.save(booking);
+
+        log.info("Refund initiated for booking {}", booking.getBookingNumber());
+    }
+
+    // Process refund with customer's choice
+    public void processRefund(Long bookingId, RefundChoiceRequest request) {
+        User currentUser = authService.getCurrentUserEntity();
+        Booking booking = findBookingById(bookingId);
+
+        // Verify it's the customer's booking
+        if (!booking.getCustomer().getId().equals(currentUser.getId())) {
+            throw new ChikChakException("Access denied");
+        }
+
+        // Verify booking is cancelled
+        if (booking.getStatus() != BookingStatus.CANCELLED) {
+            throw new ChikChakException("Booking must be cancelled to process refund");
+        }
+
+        BigDecimal refundAmount = booking.getTotalAmount();
+
+        if (request.getRefundMethod() == RefundMethod.CREDITS) {
+            // Add to account credits (instant)
+            currentUser.setAccountCredits(
+                    currentUser.getAccountCredits().add(refundAmount)
+            );
+            userRepository.save(currentUser);
+
+            log.info("Refunded {} to credits for booking {}", refundAmount, bookingId);
+        } else {
+            // Process bank refund (integrate with payment gateway)
+            // TODO: Integrate with payment processor API
+            // paymentService.processRefund(booking);
+
+            log.info("Bank refund initiated for {} for booking {}", refundAmount, bookingId);
+        }
+
+        booking.setPaymentStatus(PaymentStatus.REFUNDED);
+        bookingRepository.save(booking);
+
+        // Send confirmation
+        chatService.sendBookingUpdateMessage(
+                bookingId,
+                "REFUND_PROCESSED",
+                String.format("Refund of ₪%.2f processed via %s",
+                        refundAmount,
+                        request.getRefundMethod() == RefundMethod.CREDITS ? "account credits" : "original payment method")
+        );
+    }
+
+    // Keep all your existing methods below...
+    // (getBooking, getBookingByNumber, updateBookingStatus, proposeTime, etc.)
 
     public BookingDto getBooking(Long bookingId) {
         User currentUser = authService.getCurrentUserEntity();
         Booking booking = findBookingById(bookingId);
-        
-        // Check permissions
+
         validateBookingAccess(booking, currentUser);
-        
+
         BookingDto bookingDto = bookingMapper.toDto(booking);
-        
-        // Add unread messages count
-        // This would be implemented with the chat service
         bookingDto.setUnreadMessagesCount(0); // Placeholder
-        
+
         return bookingDto;
     }
 
     public BookingDto getBookingByNumber(String bookingNumber) {
         User currentUser = authService.getCurrentUserEntity();
         Booking booking = bookingRepository.findByBookingNumber(bookingNumber)
-            .orElseThrow(() -> new ChikChakException("Booking not found"));
-        
+                .orElseThrow(() -> new ChikChakException("Booking not found"));
+
         validateBookingAccess(booking, currentUser);
-        
+
         return bookingMapper.toDto(booking);
     }
 
     public List<BookingDto> getCustomerBookings(Long customerId, Pageable pageable) {
         User currentUser = authService.getCurrentUserEntity();
-        
-        // Customers can only see their own bookings, admins can see all
+
         if (currentUser.getRole() == UserRole.CUSTOMER && !currentUser.getId().equals(customerId)) {
             throw new ChikChakException("Access denied");
         }
-        
+
         Page<Booking> bookings = bookingRepository.findByCustomerIdOrderByCreatedAtDesc(customerId, pageable);
         return bookings.getContent().stream()
-            .map(bookingMapper::toDto)
-            .collect(Collectors.toList());
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     public List<BookingDto> getTechnicianBookings(Long technicianId, Pageable pageable) {
         User currentUser = authService.getCurrentUserEntity();
-        
-        // Technicians can only see their own bookings, admins can see all
+
         if (currentUser.getRole() == UserRole.TECHNICIAN) {
             TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+                    .orElseThrow(() -> new ChikChakException("Technician profile not found"));
             if (!profile.getId().equals(technicianId)) {
                 throw new ChikChakException("Access denied");
             }
         }
-        
+
         Page<Booking> bookings = bookingRepository.findByTechnicianIdOrderByCreatedAtDesc(technicianId, pageable);
         return bookings.getContent().stream()
-            .map(bookingMapper::toDto)
-            .collect(Collectors.toList());
-    }
-
-    public BookingDto respondToBooking(TechnicianResponseRequest request) {
-        User currentUser = authService.getCurrentUserEntity();
-        
-        if (currentUser.getRole() != UserRole.TECHNICIAN) {
-            throw new ChikChakException("Only technicians can respond to bookings");
-        }
-        
-        TechnicianProfile technician = technicianProfileRepository.findByUserId(currentUser.getId())
-            .orElseThrow(() -> new ChikChakException("Technician profile not found"));
-        
-        Booking booking = findBookingById(request.getBookingId());
-        
-        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.TECHNICIAN_NOTIFIED) {
-            throw new ChikChakException("This booking is no longer available");
-        }
-
-        switch (request.getResponseType()) {
-            case ACCEPT:
-                return acceptBooking(booking, technician, request.getSuggestedTime());
-            case DISCUSS_TIME:
-                return discussBookingTime(booking, technician, request.getSuggestedTime(), request.getMessage());
-            case DECLINE:
-                return declineBooking(booking, technician, request.getMessage());
-            default:
-                throw new ChikChakException("Invalid response type");
-        }
-    }
-
-    private BookingDto acceptBooking(Booking booking, TechnicianProfile technician, LocalDateTime suggestedTime) {
-        booking.setTechnician(technician);
-        booking.setStatus(BookingStatus.ACCEPTED);
-        
-        if (suggestedTime != null) {
-            booking.setScheduledDatetime(suggestedTime);
-            booking.setStatus(BookingStatus.SCHEDULED);
-        }
-
-        // Calculate pricing
-        PricingService.PricingCalculation pricing = pricingService.calculateBookingPrice(
-            booking.getServiceLatitude(),
-            booking.getServiceLongitude(),
-            technician.getUser().getLatitude(),
-            technician.getUser().getLongitude(),
-            technician.getBaseDiagnosisFee()
-        );
-
-        booking.setDiagnosisFee(pricing.getDiagnosisFee());
-        booking.setDistanceKm(pricing.getDistanceKm());
-        booking.setDistanceFee(pricing.getDistanceFee());
-        booking.setTotalAmount(pricing.getTotalAmount());
-
-        booking = bookingRepository.save(booking);
-        
-        createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.ACCEPTED, "Technician accepted booking");
-        
-        // Notify customer
-        notificationService.notifyCustomerBookingAccepted(booking);
-        
-        log.info("Booking {} accepted by technician {}", booking.getBookingNumber(), technician.getUser().getEmail());
-        
-        return bookingMapper.toDto(booking);
-    }
-
-    private BookingDto discussBookingTime(Booking booking, TechnicianProfile technician, 
-                                         LocalDateTime suggestedTime, String message) {
-        // This would typically create a chat message and notify the customer
-        // For now, we'll just update the booking status
-        booking.setTechnician(technician);
-        booking.setStatus(BookingStatus.TECHNICIAN_NOTIFIED);
-        
-        booking = bookingRepository.save(booking);
-        
-        // Send message through chat system
-        notificationService.notifyCustomerTimeDiscussion(booking, suggestedTime, message);
-        
-        log.info("Technician {} requested time discussion for booking {}", 
-                technician.getUser().getEmail(), booking.getBookingNumber());
-        
-        return bookingMapper.toDto(booking);
-    }
-
-    private BookingDto declineBooking(Booking booking, TechnicianProfile technician, String message) {
-        // Log the decline but don't change booking status - other technicians can still accept
-        log.info("Technician {} declined booking {}: {}", 
-                technician.getUser().getEmail(), booking.getBookingNumber(), message);
-        
-        // Notify other available technicians
-        notificationService.notifyOtherTechniciansAfterDecline(booking, technician);
-        
-        return bookingMapper.toDto(booking);
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     public BookingDto updateBookingStatus(Long bookingId, BookingUpdateRequest request) {
         User currentUser = authService.getCurrentUserEntity();
         Booking booking = findBookingById(bookingId);
-        
+
         validateBookingAccess(booking, currentUser);
-        
+
         BookingStatus oldStatus = booking.getStatus();
         BookingStatus newStatus = request.getStatus();
-        
-        // Validate status transition
+
         validateStatusTransition(oldStatus, newStatus, currentUser.getRole());
-        
+
         booking.setStatus(newStatus);
-        
+
         if (request.getScheduledDatetime() != null) {
             booking.setScheduledDatetime(request.getScheduledDatetime());
         }
-        
+
         if (request.getTechnicianNotes() != null) {
             booking.setTechnicianNotes(request.getTechnicianNotes());
         }
-        
-        // Handle special status updates
+
         handleSpecialStatusUpdates(booking, newStatus);
-        
+
         booking = bookingRepository.save(booking);
-        
+
         createStatusHistory(booking, oldStatus, newStatus, request.getReason());
-        
-        // Send notifications
+
         notificationService.notifyBookingStatusChanged(booking, oldStatus, newStatus);
-        
-        log.info("Booking {} status changed from {} to {} by {}", 
+
+        log.info("Booking {} status changed from {} to {} by {}",
                 booking.getBookingNumber(), oldStatus, newStatus, currentUser.getEmail());
-        
+
         return bookingMapper.toDto(booking);
     }
 
     private void handleSpecialStatusUpdates(Booking booking, BookingStatus newStatus) {
         switch (newStatus) {
             case ARRIVED:
-                // Release diagnosis payment when technician arrives
                 notificationService.notifyPaymentRelease(booking);
                 booking.setPaymentStatus(PaymentStatus.COMPLETED);
                 break;
             case COMPLETED:
                 booking.setCompletedDatetime(LocalDateTime.now());
-                // Update technician stats
                 updateTechnicianStats(booking.getTechnician());
                 break;
             case CANCELLED:
-                // Process refund
                 notificationService.notifyBookingCancellation(booking);
                 break;
         }
@@ -323,43 +482,37 @@ public class BookingService {
     }
 
     private void validateStatusTransition(BookingStatus oldStatus, BookingStatus newStatus, UserRole userRole) {
-        // Define valid transitions based on user role
-        // This is a simplified version - you might want a more sophisticated state machine
-        
         if (userRole == UserRole.CUSTOMER) {
-            // Customers can only cancel bookings
             if (newStatus != BookingStatus.CANCELLED) {
                 throw new ChikChakException("Customers can only cancel bookings");
             }
         } else if (userRole == UserRole.TECHNICIAN) {
-            // Technicians can update to most statuses except PENDING and CANCELLED
             if (newStatus == BookingStatus.PENDING) {
                 throw new ChikChakException("Invalid status transition");
             }
         }
-        // Admins can change to any status
     }
 
     private void createStatusHistory(Booking booking, BookingStatus oldStatus, BookingStatus newStatus, String reason) {
         BookingStatusHistory history = BookingStatusHistory.builder()
-            .booking(booking)
-            .oldStatus(oldStatus)
-            .newStatus(newStatus)
-            .changedBy(authService.getCurrentUserEntity().getEmail())
-            .reason(reason)
-            .build();
-        
+                .booking(booking)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .changedBy(authService.getCurrentUserEntity().getEmail())
+                .reason(reason)
+                .build();
+
         statusHistoryRepository.save(history);
     }
 
     private Booking findBookingById(Long bookingId) {
         return bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new ChikChakException("Booking not found"));
+                .orElseThrow(() -> new ChikChakException("Booking not found"));
     }
 
     private void validateBookingAccess(Booking booking, User user) {
         boolean hasAccess = false;
-        
+
         switch (user.getRole()) {
             case ADMIN:
                 hasAccess = true;
@@ -368,11 +521,11 @@ public class BookingService {
                 hasAccess = booking.getCustomer().getId().equals(user.getId());
                 break;
             case TECHNICIAN:
-                hasAccess = booking.getTechnician() != null && 
-                           booking.getTechnician().getUser().getId().equals(user.getId());
+                hasAccess = booking.getTechnician() != null &&
+                        booking.getTechnician().getUser().getId().equals(user.getId());
                 break;
         }
-        
+
         if (!hasAccess) {
             throw new ChikChakException("Access denied to this booking");
         }
@@ -385,40 +538,40 @@ public class BookingService {
     public List<BookingDto> getActiveBookings() {
         User currentUser = authService.getCurrentUserEntity();
         List<Booking> bookings;
-        
+
         switch (currentUser.getRole()) {
             case CUSTOMER:
                 bookings = bookingRepository.findActiveBookingsForCustomer(currentUser.getId());
                 break;
             case TECHNICIAN:
                 TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
-                    .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+                        .orElseThrow(() -> new ChikChakException("Technician profile not found"));
                 bookings = bookingRepository.findActiveBookingsForTechnician(profile.getId());
                 break;
             default:
                 throw new ChikChakException("Invalid user role for this operation");
         }
-        
+
         return bookings.stream()
-            .map(bookingMapper::toDto)
-            .collect(Collectors.toList());
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     public List<BookingDto> getPendingBookings() {
         User currentUser = authService.getCurrentUserEntity();
-        
+
         if (currentUser.getRole() != UserRole.TECHNICIAN) {
             throw new ChikChakException("Only technicians can view pending bookings");
         }
-        
+
         TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
-            .orElseThrow(() -> new ChikChakException("Technician profile not found"));
-        
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+
         List<Booking> pendingBookings = bookingRepository.findPendingBookingsForTechnician(profile.getId());
-        
+
         return pendingBookings.stream()
-            .map(bookingMapper::toDto)
-            .collect(Collectors.toList());
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     public CustomerDashboardDto getCustomerDashboard() {
@@ -431,7 +584,6 @@ public class BookingService {
         List<Booking> activeBookings = bookingRepository.findActiveBookingsForCustomer(currentUser.getId());
         List<Booking> recentBookings = bookingRepository.findByCustomerId(currentUser.getId());
 
-        // Calculate stats
         Long totalBookings = (long) recentBookings.size();
         Long completedBookings = recentBookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
@@ -458,19 +610,16 @@ public class BookingService {
 
         Booking booking = findBookingById(bookingId);
 
-        // Update booking
         booking.setProposedDatetime(request.getProposedDatetime());
         booking.setStatus(BookingStatus.TIME_DISCUSSION);
         booking = bookingRepository.save(booking);
 
-        // Create TIME_PROPOSAL message in chat
         chatService.sendTimeProposalMessage(
                 bookingId,
                 request.getProposedDatetime(),
                 request.getMessage()
         );
 
-        // Notify customer
         notificationService.notifyCustomerTimeProposal(booking);
 
         log.info("Time proposed for booking {}: {}", bookingId, request.getProposedDatetime());
@@ -491,20 +640,17 @@ public class BookingService {
             throw new ChikChakException("No time proposal to accept");
         }
 
-        // Accept the proposal
         booking.setScheduledDatetime(booking.getProposedDatetime());
-        booking.setProposedDatetime(null); // Clear proposal
+        booking.setProposedDatetime(null);
         booking.setStatus(BookingStatus.ACCEPTED);
         booking = bookingRepository.save(booking);
 
-        // Send confirmation message
         chatService.sendBookingUpdateMessage(
                 bookingId,
                 "TIME_ACCEPTED",
                 "Time confirmed: " + booking.getScheduledDatetime()
         );
 
-        // Notify technician
         notificationService.notifyTechnicianTimeAccepted(booking);
 
         log.info("Time accepted for booking {}", bookingId);
@@ -518,24 +664,19 @@ public class BookingService {
         Booking booking = findBookingById(bookingId);
         validateBookingAccess(booking, currentUser);
 
-        // Cancel booking
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setProposedDatetime(null);
         bookingRepository.save(booking);
 
-        // Process refund based on choice
         if (request.getRefundMethod() == RefundMethod.CREDITS) {
-            // Add to account credits
             currentUser.setAccountCredits(
                     currentUser.getAccountCredits().add(booking.getTotalAmount())
             );
             userRepository.save(currentUser);
         } else {
-            // Process bank refund (integrate with payment gateway)
-            // paymentService.processRefund(booking);
+            // TODO: Process bank refund via payment gateway
         }
 
-        // Notify technician
         notificationService.notifyBookingCancellation(booking);
 
         log.info("Booking {} cancelled with {} refund", bookingId, request.getRefundMethod());

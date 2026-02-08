@@ -1,55 +1,78 @@
 package com.chikchak.service;
 
 import com.chikchak.model.Booking;
+import com.chikchak.model.TechnicianProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-// Notification Service (simplified version)
+import java.time.format.DateTimeFormatter;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationService {
 
-    // This would integrate with actual notification systems (email, SMS, push notifications)
+    //  Notify single technician of new booking
+    public void notifyTechnicianOfNewBooking(com.chikchak.model.Booking booking) {
+        if (booking.getTechnician() == null) {
+            log.warn("Cannot notify technician - no technician assigned to booking {}", booking.getBookingNumber());
+            return;
+        }
 
-    public void notifyTechniciansOfNewBooking(com.chikchak.model.Booking booking,
-                                              java.util.List<com.chikchak.model.TechnicianProfile> technicians) {
-        log.info("Notifying {} technicians of new booking: {}", technicians.size(), booking.getBookingNumber());
+        com.chikchak.model.TechnicianProfile technician = booking.getTechnician();
+
+        log.info("Notifying technician {} of new booking: {}",
+                technician.getUser().getEmail(), booking.getBookingNumber());
 
         // In a real implementation, this would:
-        // 1. Send push notifications to technician mobile apps
-        // 2. Send SMS notifications for urgent bookings
-        // 3. Send email notifications
+        // 1. Send push notification to technician mobile app
+        // 2. Send SMS notification for urgent bookings
+        // 3. Send email notification
         // 4. Update real-time dashboard via WebSocket
 
-        for (com.chikchak.model.TechnicianProfile technician : technicians) {
-            sendTechnicianNotification(technician, booking);
-        }
+        String message = String.format(
+                "New booking request #%s - %s at %s on %s",
+                booking.getBookingNumber(),
+                booking.getServiceCategory().getName(),
+                booking.getServiceAddress(),
+                booking.getPreferredDatetime().format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))
+        );
+
+        sendTechnicianNotification(technician, booking, message);
     }
+
+    //  Notify customer that technician declined
+    public void notifyCustomerBookingDeclined(com.chikchak.model.Booking booking) {
+        log.info("Notifying customer {} that booking {} was declined",
+                booking.getCustomer().getEmail(), booking.getBookingNumber());
+
+        String message = "Your technician declined the booking. Please choose a refund method.";
+
+        sendCustomerNotification(booking.getCustomer(), message);
+    }
+
 
     public void notifyCustomerBookingAccepted(com.chikchak.model.Booking booking) {
         log.info("Notifying customer {} that booking {} was accepted",
                 booking.getCustomer().getEmail(), booking.getBookingNumber());
 
-        // Send notification to customer
         sendCustomerNotification(booking.getCustomer(),
                 "Your booking has been accepted by " + booking.getTechnician().getUser().getFullName());
     }
 
-    public void notifyCustomerTimeDiscussion(com.chikchak.model.Booking booking,
-                                             java.time.LocalDateTime suggestedTime, String message) {
-        log.info("Notifying customer {} about time discussion for booking {}",
+    public void notifyCustomerTimeProposal(com.chikchak.model.Booking booking) {
+        log.info("Notifying customer {} about time proposal for booking {}",
                 booking.getCustomer().getEmail(), booking.getBookingNumber());
 
-        // This would create a chat message and send notification
+        // TODO: Implement actual notification (push, SMS, email)
     }
 
-    public void notifyOtherTechniciansAfterDecline(com.chikchak.model.Booking booking,
-                                                   com.chikchak.model.TechnicianProfile declinedBy) {
-        log.info("Notifying other technicians after decline for booking: {}", booking.getBookingNumber());
+    public void notifyTechnicianTimeAccepted(Booking booking) {
+        log.info("Notifying technician {} that time was accepted for booking {}",
+                booking.getTechnician().getUser().getEmail(), booking.getBookingNumber());
 
-        // Find other available technicians and notify them
+        // TODO: Implement actual notification
     }
 
     public void notifyBookingStatusChanged(com.chikchak.model.Booking booking,
@@ -58,7 +81,6 @@ public class NotificationService {
         log.info("Notifying parties of status change for booking {} from {} to {}",
                 booking.getBookingNumber(), oldStatus, newStatus);
 
-        // Send notifications based on the status change
         switch (newStatus) {
             case ON_THE_WAY:
                 sendCustomerNotification(booking.getCustomer(),
@@ -78,7 +100,6 @@ public class NotificationService {
     public void notifyPaymentRelease(com.chikchak.model.Booking booking) {
         log.info("Processing payment release for booking: {}", booking.getBookingNumber());
 
-        // This would trigger the payment processing system
         sendTechnicianNotification(booking.getTechnician(), booking,
                 "Payment has been released for booking " + booking.getBookingNumber());
     }
@@ -86,40 +107,24 @@ public class NotificationService {
     public void notifyBookingCancellation(com.chikchak.model.Booking booking) {
         log.info("Processing cancellation for booking: {}", booking.getBookingNumber());
 
-        // Process refund and notify parties
         if (booking.getTechnician() != null) {
             sendTechnicianNotification(booking.getTechnician(), booking,
                     "Booking " + booking.getBookingNumber() + " has been cancelled");
         }
 
         sendCustomerNotification(booking.getCustomer(),
-                "Your booking has been cancelled. Refund will be processed as account credits.");
+                "Your booking has been cancelled. Refund will be processed.");
     }
 
     private void sendCustomerNotification(com.chikchak.model.User customer, String message) {
-        // Implementation would send actual notifications
         log.info("Sending notification to customer {}: {}", customer.getEmail(), message);
-    }
-
-    private void sendTechnicianNotification(com.chikchak.model.TechnicianProfile technician,
-                                            com.chikchak.model.Booking booking) {
-        sendTechnicianNotification(technician, booking,
-                "New booking available: " + booking.getBookingNumber());
+        // TODO: Implement actual push/SMS/email notification
     }
 
     private void sendTechnicianNotification(com.chikchak.model.TechnicianProfile technician,
                                             com.chikchak.model.Booking booking, String message) {
         log.info("Sending notification to technician {}: {}",
                 technician.getUser().getEmail(), message);
-    }
-    public void notifyCustomerTimeProposal(Booking booking) {
-        log.info("Notifying customer {} about time proposal for booking {}",
-                booking.getCustomer().getEmail(), booking.getBookingNumber());
-
-        // TODO: Implement actual notification (push, SMS, email)
-        // For now, just logging
-    }
-
-    public void notifyTechnicianTimeAccepted(Booking booking) {
+        // TODO: Implement actual push/SMS/email notification
     }
 }

@@ -20,6 +20,15 @@ public class BookingController {
 
     private final BookingService bookingService;
 
+
+    @PostMapping("/calculate-price")
+    @Operation(summary = "Calculate booking price", description = "Calculate price before creating booking")
+    public ResponseEntity<ApiResponse<PricingCalculationDto>> calculatePrice(
+            @Valid @RequestBody PriceCalculationRequest request) {
+        PricingCalculationDto pricing = bookingService.calculateBookingPrice(request);
+        return ResponseEntity.ok(ApiResponse.success(pricing));
+    }
+
     @PostMapping
     @Operation(summary = "Create booking", description = "Create a new service booking")
     public ResponseEntity<ApiResponse<BookingDto>> createBooking(@Valid @RequestBody CreateBookingRequest request) {
@@ -90,5 +99,14 @@ public class BookingController {
             @Valid @RequestBody RefundChoiceRequest request) {
         bookingService.declineAndRefund(id, request);
         return ResponseEntity.ok(ApiResponse.success("Booking cancelled, refund processed", null));
+    }
+
+    @PostMapping("/{id}/process-refund")
+    @Operation(summary = "Process refund", description = "Customer chooses refund method after technician decline")
+    public ResponseEntity<ApiResponse<String>> processRefund(
+            @PathVariable Long id,
+            @Valid @RequestBody RefundChoiceRequest request) {
+        bookingService.processRefund(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Refund processed successfully", null));
     }
 }
