@@ -482,6 +482,16 @@ public class BookingService {
     }
 
     private void validateStatusTransition(BookingStatus oldStatus, BookingStatus newStatus, UserRole userRole) {
+        // Can't change cancelled bookings
+        if (oldStatus == BookingStatus.CANCELLED) {
+            throw new ChikChakException("Cannot modify cancelled booking");
+        }
+
+        // Can't change completed bookings
+        if (oldStatus == BookingStatus.COMPLETED) {
+            throw new ChikChakException("Cannot modify completed booking");
+        }
+
         if (userRole == UserRole.CUSTOMER) {
             if (newStatus != BookingStatus.CANCELLED) {
                 throw new ChikChakException("Customers can only cancel bookings");
@@ -610,6 +620,21 @@ public class BookingService {
 
         Booking booking = findBookingById(bookingId);
 
+
+
+        if (booking.getStatus() != BookingStatus.PENDING &&
+                booking.getStatus() != BookingStatus.TIME_DISCUSSION) {
+            throw new ChikChakException("Cannot propose time for booking with status: " + booking.getStatus());
+        }
+
+
+        TechnicianProfile technician = technicianProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+
+        if (!booking.getTechnician().getId().equals(technician.getId())) {
+            throw new ChikChakException("This booking is not assigned to you");
+        }
+
         booking.setProposedDatetime(request.getProposedDatetime());
         booking.setStatus(BookingStatus.TIME_DISCUSSION);
         booking = bookingRepository.save(booking);
@@ -635,6 +660,17 @@ public class BookingService {
         }
 
         Booking booking = findBookingById(bookingId);
+
+
+
+        if (booking.getStatus() != BookingStatus.TIME_DISCUSSION) {
+            throw new ChikChakException("No active time discussion for this booking");
+        }
+
+        if (booking.getProposedDatetime() == null) {
+            throw new ChikChakException("No time proposal to accept");
+        }
+
 
         if (booking.getProposedDatetime() == null) {
             throw new ChikChakException("No time proposal to accept");

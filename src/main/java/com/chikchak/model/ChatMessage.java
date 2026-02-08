@@ -20,7 +20,7 @@ public class ChatMessage extends BaseEntity {
     private Chat chat;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = true)
     private User sender;
 
     @Column(name = "message", columnDefinition = "TEXT", nullable = false)
