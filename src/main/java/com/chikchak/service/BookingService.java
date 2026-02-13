@@ -117,12 +117,7 @@ public class BookingService {
         // Create booking number
         String bookingNumber = generateBookingNumber();
 
-        // Build customer notes (combine directions if provided)
-        String fullCustomerNotes = request.getCustomerNotes();
-        if (request.getDirections() != null && !request.getDirections().trim().isEmpty()) {
-            fullCustomerNotes = (fullCustomerNotes != null ? fullCustomerNotes + "\n\nDirections: " : "Directions: ")
-                    + request.getDirections();
-        }
+
 
         // Create booking
         Booking booking = Booking.builder()
@@ -134,13 +129,11 @@ public class BookingService {
                 .status(BookingStatus.PENDING) // Awaiting technician confirmation
                 .urgency(request.getUrgency())
                 .serviceAddress(request.getServiceAddress())
-                .serviceCity(request.getServiceCity())
                 .serviceLatitude(request.getServiceLatitude())
                 .serviceLongitude(request.getServiceLongitude())
                 .preferredDatetime(request.getPreferredDatetime())
                 .scheduledDatetime(null) // Not scheduled until technician accepts
                 .isEmergency(request.getIsEmergency())
-                .customerNotes(fullCustomerNotes)
                 // Set pricing
                 .diagnosisFee(pricing.getDiagnosisFee())
                 .serviceFee(pricing.getServiceFee())

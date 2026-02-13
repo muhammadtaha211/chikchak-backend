@@ -27,7 +27,7 @@ public class CreateBookingRequest {
     @NotBlank(message = "Service address is required")
     private String serviceAddress;
 
-    private String serviceCity;
+
 
     @NotNull(message = "Service location coordinates are required")
     private Double serviceLatitude;
@@ -39,13 +39,13 @@ public class CreateBookingRequest {
     private LocalDateTime preferredDatetime;
 
     @NotNull(message = "Urgency level is required")
-    private BookingUrgency urgency;
+    private BookingUrgency urgency = BookingUrgency.NORMAL;
 
     private List<String> photos;
     private String customerNotes;
     private Boolean isEmergency = false;
 
-    private String directions; // Directions to customer's house
+
 
     @NotNull(message = "Technician selection is required")
     private Long selectedTechnicianId; // Which technician customer selected

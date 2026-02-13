@@ -48,9 +48,6 @@ public class Booking extends BaseEntity {
     @Column(name = "service_address", nullable = false)
     private String serviceAddress;
 
-    @Column(name = "service_city")
-    private String serviceCity;
-
     @Column(name = "service_latitude")
     private Double serviceLatitude;
 
