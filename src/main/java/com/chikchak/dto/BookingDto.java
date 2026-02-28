@@ -3,7 +3,6 @@ package com.chikchak.dto;
 import com.chikchak.model.BookingStatus;
 import com.chikchak.model.BookingUrgency;
 import com.chikchak.model.PaymentStatus;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -19,44 +19,71 @@ import java.util.List;
 @Builder
 public class BookingDto {
     private Long id;
-    private String bookingNumber;
+
+    @Builder.Default
+    private String bookingNumber = "";
+
     private UserDto customer;
     private TechnicianProfileDto technician;
     private ServiceCategoryDto serviceCategory;
-    private String problemDescription;
+
+    @Builder.Default
+    private String problemDescription = "";
+
     private BookingStatus status;
     private BookingUrgency urgency;
 
-    private String serviceAddress;
-    private String serviceCity;
-    private Double serviceLatitude;
-    private Double serviceLongitude;
+    @Builder.Default
+    private String serviceAddress = "";
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+
+
+    @Builder.Default
+    private Double serviceLatitude = 0.0;
+
+    @Builder.Default
+    private Double serviceLongitude = 0.0;
+
+    // REMOVED @JsonFormat — JacksonConfig handles DateTime globally now
     private LocalDateTime preferredDatetime;
-
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime scheduledDatetime;
-
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime completedDatetime;
 
-    private BigDecimal diagnosisFee;
-    private BigDecimal serviceFee;
-    private BigDecimal totalAmount;
-    private BigDecimal distanceKm;
-    private BigDecimal distanceFee;
+    @Builder.Default
+    private BigDecimal diagnosisFee = BigDecimal.ZERO;
 
-    private PaymentStatus paymentStatus;
-    private String paymentMethod;
+    @Builder.Default
+    private BigDecimal serviceFee = BigDecimal.ZERO;
 
-    private List<String> photos;
-    private String customerNotes;
-    private String technicianNotes;
-    private Boolean isEmergency;
+    @Builder.Default
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Builder.Default
+    private BigDecimal distanceKm = BigDecimal.ZERO;
+
+    @Builder.Default
+    private BigDecimal distanceFee = BigDecimal.ZERO;
+
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
+    @Builder.Default
+    private String paymentMethod = "";
+
+    @Builder.Default
+    private List<String> photos = new ArrayList<>();
+
+    @Builder.Default
+    private String customerNotes = "";
+
+    @Builder.Default
+    private String technicianNotes = "";
+
+    @Builder.Default
+    private Boolean isEmergency = false;
+
     private LocalDateTime createdAt;
 
-    private Integer unreadMessagesCount;
+    @Builder.Default
+    private Integer unreadMessagesCount = 0;
 }

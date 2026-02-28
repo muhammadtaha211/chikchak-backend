@@ -11,9 +11,19 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ServiceCategoryDto {
     private Long id;
-    private String name;
-    private String nameHe;
-    private String description;
-    private String iconUrl;
-    private Boolean isActive;
+
+    @Builder.Default
+    private String name = "";
+
+    @Builder.Default
+    private String nameHe = "";
+
+    @Builder.Default
+    private String description = "";
+
+    @Builder.Default
+    private String iconUrl = "";
+
+    @Builder.Default
+    private Boolean isActive = true;
 }

@@ -35,7 +35,7 @@ public class CreateBookingRequest {
     @NotNull(message = "Service location coordinates are required")
     private Double serviceLongitude;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd['T'][' ']HH:mm:ss[.SSS]")
     private LocalDateTime preferredDatetime;
 
     @NotNull(message = "Urgency level is required")
