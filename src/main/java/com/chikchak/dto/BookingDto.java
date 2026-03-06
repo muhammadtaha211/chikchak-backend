@@ -46,6 +46,7 @@ public class BookingDto {
 
     // REMOVED @JsonFormat — JacksonConfig handles DateTime globally now
     private LocalDateTime preferredDatetime;
+    private LocalDateTime proposedDatetime;
     private LocalDateTime scheduledDatetime;
     private LocalDateTime completedDatetime;
 

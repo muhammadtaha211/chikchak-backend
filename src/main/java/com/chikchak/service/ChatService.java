@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -384,7 +385,12 @@ public class ChatService {
         ChatMessage message = ChatMessage.builder()
                 .chat(chat)  // ← Use chat, not booking
                 .sender(technician)
-                .message(proposedTime.toString()) // Store as ISO string
+                .message(String.format(
+                        "Unfortunately I'm unavailable during the time you chose, however I'm available on %s, %s - %s. Please go to the tracking page to accept or cancel the booking.",
+                        proposedTime.format(DateTimeFormatter.ofPattern("MMM dd")),
+                        proposedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        proposedTime.plusHours(2).format(DateTimeFormatter.ofPattern("HH:mm"))
+                ))
                 .messageType(MessageType.TIME_PROPOSAL)
                 .isRead(false)
                 .build();
@@ -404,4 +410,6 @@ public class ChatService {
 
         return messageDto;
     }
+
+
 }

@@ -177,9 +177,9 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "BOOKING_CREATED",
-                String.format("New booking request for %s on %s",
+                String.format("Booking request for %s on %s",
                         serviceCategory.getName(),
-                        booking.getPreferredDatetime().format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))
+                        formatTimeRange(booking.getPreferredDatetime())
                 )
         );
 
@@ -244,8 +244,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "BOOKING_ACCEPTED",
-                "Technician accepted! Scheduled for " +
-                        booking.getScheduledDatetime().format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))
+                "Professional accepted! Scheduled for " + formatTimeRange(booking.getScheduledDatetime())
         );
 
         // Notify customer
@@ -677,7 +676,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 bookingId,
                 "TIME_ACCEPTED",
-                "Time confirmed: " + booking.getScheduledDatetime()
+                "Time confirmed: " + formatTimeRange(booking.getScheduledDatetime())
         );
 
         notificationService.notifyTechnicianTimeAccepted(booking);
@@ -709,5 +708,15 @@ public class BookingService {
         notificationService.notifyBookingCancellation(booking);
 
         log.info("Booking {} cancelled with {} refund", bookingId, request.getRefundMethod());
+    }
+
+    private String formatTimeRange(LocalDateTime start) {
+        if (start == null) return "TBD";
+        LocalDateTime end = start.plusHours(2);
+        return String.format("%s, %s - %s",
+                start.format(DateTimeFormatter.ofPattern("MMM dd")),
+                start.format(DateTimeFormatter.ofPattern("HH:mm")),
+                end.format(DateTimeFormatter.ofPattern("HH:mm"))
+        );
     }
 }
