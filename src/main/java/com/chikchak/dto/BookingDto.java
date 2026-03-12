@@ -83,6 +83,9 @@ public class BookingDto {
     @Builder.Default
     private Boolean isEmergency = false;
 
+    @Builder.Default
+    private Boolean isRated = false;
+
     private LocalDateTime createdAt;
 
     @Builder.Default
