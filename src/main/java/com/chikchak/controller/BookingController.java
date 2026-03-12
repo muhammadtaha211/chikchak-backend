@@ -109,4 +109,18 @@ public class BookingController {
         bookingService.processRefund(id, request);
         return ResponseEntity.ok(ApiResponse.success("Refund processed successfully", null));
     }
+
+    @PostMapping("/{id}/confirm-arrival")
+    @Operation(summary = "Confirm arrival", description = "Customer confirms technician has arrived")
+    public ResponseEntity<ApiResponse<BookingDto>> confirmArrival(@PathVariable Long id) {
+        BookingDto booking = bookingService.confirmArrival(id);
+        return ResponseEntity.ok(ApiResponse.success("Arrival confirmed, payment released", booking));
+    }
+
+    @PostMapping("/{id}/dispute-arrival")
+    @Operation(summary = "Dispute arrival", description = "Customer disputes technician arrival")
+    public ResponseEntity<ApiResponse<BookingDto>> disputeArrival(@PathVariable Long id) {
+        BookingDto booking = bookingService.disputeArrival(id);
+        return ResponseEntity.ok(ApiResponse.success("Dispute submitted for admin review", booking));
+    }
 }

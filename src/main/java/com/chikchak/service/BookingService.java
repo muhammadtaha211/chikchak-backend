@@ -452,8 +452,13 @@ public class BookingService {
     private void handleSpecialStatusUpdates(Booking booking, BookingStatus newStatus) {
         switch (newStatus) {
             case ARRIVED:
-                notificationService.notifyPaymentRelease(booking);
-                booking.setPaymentStatus(PaymentStatus.COMPLETED);
+                booking.setPaymentStatus(PaymentStatus.ESCROW);
+                booking.setArrivalMarkedAt(LocalDateTime.now());
+                chatService.sendBookingUpdateMessage(
+                        booking.getId(),
+                        "ARRIVAL_CONFIRMATION",
+                        "The professional has marked that they arrived. Please confirm their arrival."
+                );
                 break;
             case COMPLETED:
                 booking.setCompletedDatetime(LocalDateTime.now());
@@ -462,6 +467,7 @@ public class BookingService {
             case CANCELLED:
                 notificationService.notifyBookingCancellation(booking);
                 break;
+
         }
     }
 
@@ -719,4 +725,72 @@ public class BookingService {
                 end.format(DateTimeFormatter.ofPattern("HH:mm"))
         );
     }
+
+    public BookingDto confirmArrival(Long bookingId) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.CUSTOMER) {
+            throw new ChikChakException("Only customers can confirm arrival");
+        }
+
+        Booking booking = findBookingById(bookingId);
+        validateBookingAccess(booking, currentUser);
+
+        if (booking.getStatus() != BookingStatus.ARRIVED) {
+            throw new ChikChakException("Booking is not in ARRIVED status");
+        }
+
+        // Release payment
+        booking.setPaymentStatus(PaymentStatus.COMPLETED);
+        booking.setStatus(BookingStatus.IN_PROGRESS);
+        booking = bookingRepository.save(booking);
+
+        createStatusHistory(booking, BookingStatus.ARRIVED, BookingStatus.IN_PROGRESS,
+                "Customer confirmed arrival - payment released");
+
+        chatService.sendBookingUpdateMessage(
+                bookingId,
+                "ARRIVAL_CONFIRMED",
+                "Arrival confirmed. Payment released. The professional will now begin work."
+        );
+
+        notificationService.notifyPaymentRelease(booking);
+
+        log.info("Arrival confirmed for booking {}, payment released", booking.getBookingNumber());
+
+        return bookingMapper.toDto(booking);
+    }
+
+    public BookingDto disputeArrival(Long bookingId) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.CUSTOMER) {
+            throw new ChikChakException("Only customers can dispute arrival");
+        }
+
+        Booking booking = findBookingById(bookingId);
+        validateBookingAccess(booking, currentUser);
+
+        if (booking.getStatus() != BookingStatus.ARRIVED) {
+            throw new ChikChakException("Booking is not in ARRIVED status");
+        }
+
+        booking.setStatus(BookingStatus.DISPUTED);
+        booking.setPaymentStatus(PaymentStatus.DISPUTED);
+        booking = bookingRepository.save(booking);
+
+        createStatusHistory(booking, BookingStatus.ARRIVED, BookingStatus.DISPUTED,
+                "Customer disputed technician arrival");
+
+        chatService.sendBookingUpdateMessage(
+                bookingId,
+                "ARRIVAL_DISPUTED",
+                "Arrival has been disputed. An admin will review this case."
+        );
+
+        log.info("Arrival disputed for booking {}", booking.getBookingNumber());
+
+        return bookingMapper.toDto(booking);
+    }
+
 }

@@ -115,4 +115,7 @@ public class Booking extends BaseEntity {
 
     @Column(name = "proposed_datetime")
     private LocalDateTime proposedDatetime; // For time change proposals
+
+    @Column(name = "arrival_marked_at")
+    private LocalDateTime arrivalMarkedAt;
 }
