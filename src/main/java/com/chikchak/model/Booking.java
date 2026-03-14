@@ -105,6 +105,10 @@ public class Booking extends BaseEntity {
     @Builder.Default
     private Boolean isEmergency = false;
 
+    @Column(name = "is_rated")
+    @Builder.Default
+    private Boolean isRated = false;
+
     // Relationships
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Chat chat;
