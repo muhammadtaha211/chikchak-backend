@@ -86,6 +86,9 @@ public class BookingDto {
     @Builder.Default
     private Boolean isRated = false;
 
+    @Builder.Default
+    private Boolean ratingDismissed = false;
+
     private LocalDateTime createdAt;
 
     @Builder.Default

@@ -90,6 +90,12 @@ public class BookingService {
             throw new ChikChakException("Only customers can create bookings");
         }
 
+        // Enforce single active booking per customer
+        List<Booking> existingBookings = bookingRepository.findNonTerminalBookingsForCustomer(customer.getId());
+        if (!existingBookings.isEmpty()) {
+            throw new ChikChakException("You already have an active booking. Please complete or cancel it before creating a new one.");
+        }
+
         ServiceCategory serviceCategory = serviceCategoryRepository.findById(request.getServiceCategoryId())
                 .orElseThrow(() -> new ChikChakException("Service category not found"));
 
@@ -757,6 +763,28 @@ public class BookingService {
         notificationService.notifyPaymentRelease(booking);
 
         log.info("Arrival confirmed for booking {}, payment released", booking.getBookingNumber());
+
+        return bookingMapper.toDto(booking);
+    }
+
+    public BookingDto dismissRating(Long bookingId) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.CUSTOMER) {
+            throw new ChikChakException("Only customers can dismiss ratings");
+        }
+
+        Booking booking = findBookingById(bookingId);
+        validateBookingAccess(booking, currentUser);
+
+        if (booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new ChikChakException("Can only dismiss rating for completed bookings");
+        }
+
+        booking.setRatingDismissed(true);
+        booking = bookingRepository.save(booking);
+
+        log.info("Rating dismissed for booking {}", booking.getBookingNumber());
 
         return bookingMapper.toDto(booking);
     }

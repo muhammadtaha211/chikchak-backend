@@ -110,6 +110,13 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success("Refund processed successfully", null));
     }
 
+    @PostMapping("/{id}/dismiss-rating")
+    @Operation(summary = "Dismiss rating", description = "Customer skips rating for a completed booking")
+    public ResponseEntity<ApiResponse<BookingDto>> dismissRating(@PathVariable Long id) {
+        BookingDto booking = bookingService.dismissRating(id);
+        return ResponseEntity.ok(ApiResponse.success("Rating dismissed", booking));
+    }
+
     @PostMapping("/{id}/confirm-arrival")
     @Operation(summary = "Confirm arrival", description = "Customer confirms technician has arrived")
     public ResponseEntity<ApiResponse<BookingDto>> confirmArrival(@PathVariable Long id) {
