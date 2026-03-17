@@ -39,8 +39,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.technician.id = :technicianId AND b.status = 'PENDING'")
     List<Booking> findPendingBookingsForTechnician(@Param("technicianId") Long technicianId);
 
-    @Query("SELECT b FROM Booking b WHERE b.customer.id = :customerId AND b.status IN ('ACCEPTED', 'SCHEDULED', 'ON_THE_WAY', 'ARRIVED', 'IN_PROGRESS')")
+    @Query("SELECT b FROM Booking b WHERE b.customer.id = :customerId AND (b.status IN ('PENDING', 'TECHNICIAN_NOTIFIED', 'TIME_DISCUSSION', 'ACCEPTED', 'SCHEDULED', 'ON_THE_WAY', 'ARRIVED', 'IN_PROGRESS', 'ASSESSMENT_COMPLETE') OR (b.status = 'COMPLETED' AND b.isRated = false AND b.ratingDismissed = false))")
     List<Booking> findActiveBookingsForCustomer(@Param("customerId") Long customerId);
+
+    @Query("SELECT b FROM Booking b WHERE b.customer.id = :customerId AND b.status IN ('PENDING', 'TECHNICIAN_NOTIFIED', 'TIME_DISCUSSION', 'ACCEPTED', 'SCHEDULED', 'ON_THE_WAY', 'ARRIVED', 'IN_PROGRESS', 'ASSESSMENT_COMPLETE')")
+    List<Booking> findNonTerminalBookingsForCustomer(@Param("customerId") Long customerId);
 
     @Query("SELECT b FROM Booking b WHERE b.technician.id = :technicianId AND b.status IN ('ACCEPTED', 'SCHEDULED', 'ON_THE_WAY', 'ARRIVED', 'IN_PROGRESS')")
     List<Booking> findActiveBookingsForTechnician(@Param("technicianId") Long technicianId);
