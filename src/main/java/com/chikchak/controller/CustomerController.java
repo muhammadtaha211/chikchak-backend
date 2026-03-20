@@ -1,10 +1,13 @@
 package com.chikchak.controller;
 
 import com.chikchak.dto.*;
+import com.chikchak.service.AuthService;
 import com.chikchak.service.BookingService;
 import com.chikchak.service.TechnicianService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,23 +25,18 @@ public class CustomerController {
 
     private final BookingService bookingService;
     private final TechnicianService technicianService;
+    private final AuthService authService;
 
     @GetMapping("/bookings")
-    @Operation(summary = "Get customer bookings", description = "Get all bookings for current customer")
+    @Operation(summary = "Get customer bookings", description = "Get all bookings for current customer (all statuses)")
     public ResponseEntity<ApiResponse<List<BookingDto>>> getMyBookings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "50") int size) {
 
-        org.springframework.data.domain.Pageable pageable =
-                org.springframework.data.domain.PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        Long customerId = authService.getCurrentUserEntity().getId();
 
-        // Get current user and their bookings
-        com.chikchak.model.User currentUser = ((com.chikchak.service.AuthService)
-                org.springframework.beans.factory.BeanFactory.class.cast(
-                        org.springframework.context.ApplicationContextAware.class))
-                .getCurrentUserEntity();
-
-        List<BookingDto> bookings = bookingService.getCustomerBookings(currentUser.getId(), pageable);
+        List<BookingDto> bookings = bookingService.getCustomerBookings(customerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 

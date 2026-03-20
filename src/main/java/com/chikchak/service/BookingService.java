@@ -138,7 +138,7 @@ public class BookingService {
                 .serviceLatitude(request.getServiceLatitude())
                 .serviceLongitude(request.getServiceLongitude())
                 .preferredDatetime(request.getPreferredDatetime())
-                .scheduledDatetime(null) // Not scheduled until technician accepts
+                .scheduledDatetime(request.getPreferredDatetime()) // Defaults to preferred, updated if customer accepts a proposed time
                 .isEmergency(request.getIsEmergency())
                 // Set pricing
                 .diagnosisFee(pricing.getDiagnosisFee())
