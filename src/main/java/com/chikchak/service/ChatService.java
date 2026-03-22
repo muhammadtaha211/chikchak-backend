@@ -196,7 +196,7 @@ public class ChatService {
 
         // Mark messages as read (only messages not sent by current user)
         unreadMessages.stream()
-                .filter(msg -> !msg.getSender().getId().equals(currentUser.getId()))
+                .filter(msg -> msg.getSender() != null && !msg.getSender().getId().equals(currentUser.getId()))
                 .forEach(msg -> {
                     msg.setIsRead(true);
                     chatMessageRepository.save(msg);
