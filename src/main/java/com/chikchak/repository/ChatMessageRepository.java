@@ -20,6 +20,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     List<ChatMessage> findByChatIdAndIsReadFalse(Long chatId);
 
-    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.chat.id = :chatId AND cm.sender.id != :userId AND cm.isRead = false")
+    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.chat.id = :chatId AND cm.sender IS NOT NULL AND cm.sender.id != :userId AND cm.isRead = false")
     Long countUnreadMessagesForUser(@Param("chatId") Long chatId, @Param("userId") Long userId);
 }

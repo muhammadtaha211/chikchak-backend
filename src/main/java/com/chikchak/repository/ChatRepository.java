@@ -28,6 +28,6 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     Optional<Chat> findByBookingId(Long bookingId);
 
     // Count unread messages in a chat for a specific user
-    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.chat.id = :chatId AND cm.sender.id != :userId AND cm.isRead = false")
+    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.chat.id = :chatId AND cm.sender IS NOT NULL AND cm.sender.id != :userId AND cm.isRead = false")
     Long countUnreadMessagesInChat(@Param("chatId") Long chatId, @Param("userId") Long userId);
 }
