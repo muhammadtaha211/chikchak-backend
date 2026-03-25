@@ -33,14 +33,14 @@ public class TechnicianService {
     public TechnicianSearchResponse searchTechnicians(TechnicianSearchRequest request) {
         List<TechnicianProfile> technicians;
 
-        if (request.getServiceCategoryId() != null && request.getLatitude() != null && request.getLongitude() != null) {
-            technicians = technicianProfileRepository.findBestTechniciansForServiceAndLocation(
-                    request.getServiceCategoryId(),
+        if (request.getServiceType() != null && request.getLatitude() != null && request.getLongitude() != null) {
+            technicians = technicianProfileRepository.findBestTechniciansForServiceTypeAndLocation(
+                    request.getServiceType(),
                     request.getLatitude(),
                     request.getLongitude()
             );
-        } else if (request.getServiceCategoryId() != null) {
-            technicians = technicianProfileRepository.findAvailableTechniciansByService(request.getServiceCategoryId());
+        } else if (request.getServiceType() != null) {
+            technicians = technicianProfileRepository.findAvailableTechniciansByServiceType(request.getServiceType());
         } else {
             technicians = technicianProfileRepository.findByIsVerifiedAndIsAvailable(true, true);
         }

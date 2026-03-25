@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class ServiceCategoryDto {
     private Long id;
 
+    private String serviceType;
+
     @Builder.Default
     private String name = "";
 

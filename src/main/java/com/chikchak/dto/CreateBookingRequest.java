@@ -1,6 +1,7 @@
 package com.chikchak.dto;
 
 import com.chikchak.model.BookingUrgency;
+import com.chikchak.model.ServiceType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,8 +19,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CreateBookingRequest {
-    @NotNull(message = "Service category is required")
-    private Long serviceCategoryId;
+    @NotNull(message = "Service type is required")
+    private ServiceType serviceType;
 
     @NotBlank(message = "Problem description is required")
     private String problemDescription;
