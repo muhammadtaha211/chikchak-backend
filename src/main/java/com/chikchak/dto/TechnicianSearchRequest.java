@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.chikchak.model.ServiceType;
 import java.math.BigDecimal;
 
 // Search and Filter DTOs
@@ -13,7 +14,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class TechnicianSearchRequest {
-    private Long serviceCategoryId;
+    private ServiceType serviceType;
     private Double latitude;
     private Double longitude;
     private Integer maxDistance;

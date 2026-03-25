@@ -2,6 +2,7 @@
 package com.chikchak.config;
 
 import com.chikchak.model.ServiceCategory;
+import com.chikchak.model.ServiceType;
 import com.chikchak.model.User;
 import com.chikchak.model.UserRole;
 import com.chikchak.repository.ServiceCategoryRepository;
@@ -40,6 +41,8 @@ public class DataInitializer {
             if (serviceCategoryRepository.count() == 0) {
                 createDefaultServices(serviceCategoryRepository);
                 log.info("Default service categories created");
+            } else {
+                patchExistingServiceTypes(serviceCategoryRepository);
             }
         };
     }
@@ -47,6 +50,7 @@ public class DataInitializer {
     private void createDefaultServices(ServiceCategoryRepository repository) {
         ServiceCategory[] services = {
                 ServiceCategory.builder()
+                        .serviceType(ServiceType.PLUMBING)
                         .name("Plumbing")
                         .nameHe("שרברבות")
                         .description("Plumbing services including pipe repair, installation, and maintenance")
@@ -54,6 +58,7 @@ public class DataInitializer {
                         .isActive(true)
                         .build(),
                 ServiceCategory.builder()
+                        .serviceType(ServiceType.ELECTRICAL)
                         .name("Electrical")
                         .nameHe("חשמל")
                         .description("Electrical services including wiring, installation, and repair")
@@ -61,6 +66,7 @@ public class DataInitializer {
                         .isActive(true)
                         .build(),
                 ServiceCategory.builder()
+                        .serviceType(ServiceType.AC_REPAIR)
                         .name("AC Repair")
                         .nameHe("תיקון מזגנים")
                         .description("Air conditioning repair, maintenance, and installation")
@@ -68,13 +74,15 @@ public class DataInitializer {
                         .isActive(true)
                         .build(),
                 ServiceCategory.builder()
-                        .name("Appliance Repair")
-                        .nameHe("תיקון מכשירי חשמל")
-                        .description("Home appliance repair and maintenance services")
-                        .iconUrl("/icons/appliance-repair.svg")
+                        .serviceType(ServiceType.MOVERS)
+                        .name("Movers")
+                        .nameHe("הובלות")
+                        .description("Moving and relocation services")
+                        .iconUrl("/icons/movers.svg")
                         .isActive(true)
                         .build(),
                 ServiceCategory.builder()
+                        .serviceType(ServiceType.CLEANING)
                         .name("Cleaning")
                         .nameHe("ניקיון")
                         .description("Professional cleaning services for homes and offices")
@@ -82,6 +90,7 @@ public class DataInitializer {
                         .isActive(true)
                         .build(),
                 ServiceCategory.builder()
+                        .serviceType(ServiceType.CARPENTRY)
                         .name("Carpentry")
                         .nameHe("נגרות")
                         .description("Carpentry and woodworking services")
@@ -89,6 +98,7 @@ public class DataInitializer {
                         .isActive(true)
                         .build(),
                 ServiceCategory.builder()
+                        .serviceType(ServiceType.PAINTING)
                         .name("Painting")
                         .nameHe("צביעה")
                         .description("Interior and exterior painting services")
@@ -96,6 +106,7 @@ public class DataInitializer {
                         .isActive(true)
                         .build(),
                 ServiceCategory.builder()
+                        .serviceType(ServiceType.GARDENING)
                         .name("Gardening")
                         .nameHe("גינון")
                         .description("Gardening and landscaping services")
@@ -106,6 +117,33 @@ public class DataInitializer {
 
         for (ServiceCategory service : services) {
             repository.save(service);
+        }
+    }
+
+    private void patchExistingServiceTypes(ServiceCategoryRepository repository) {
+        // Patch existing rows that don't have serviceType set yet
+        java.util.Map<String, ServiceType> nameToType = java.util.Map.of(
+                "Plumbing", ServiceType.PLUMBING,
+                "Electrical", ServiceType.ELECTRICAL,
+                "AC Repair", ServiceType.AC_REPAIR,
+                "Movers", ServiceType.MOVERS,
+                "Cleaning", ServiceType.CLEANING,
+                "Carpentry", ServiceType.CARPENTRY,
+                "Painting", ServiceType.PAINTING,
+                "Gardening", ServiceType.GARDENING
+        );
+
+        for (ServiceCategory category : repository.findAll()) {
+            if (category.getServiceType() == null) {
+                ServiceType type = nameToType.get(category.getName());
+                if (type != null) {
+                    category.setServiceType(type);
+                    repository.save(category);
+                    log.info("Patched serviceType for: {} -> {}", category.getName(), type);
+                } else {
+                    log.warn("No matching ServiceType for category: {}", category.getName());
+                }
+            }
         }
     }
 }

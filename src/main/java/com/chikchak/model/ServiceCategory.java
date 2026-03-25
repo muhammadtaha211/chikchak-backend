@@ -2,6 +2,8 @@ package com.chikchak.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +18,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ServiceCategory extends BaseEntity {
+    @Enumerated(EnumType.STRING)
+    @Column(name = "service_type", unique = true)
+    private ServiceType serviceType;
+
     @Column(nullable = false, unique = true)
     private String name;
 

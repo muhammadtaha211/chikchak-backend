@@ -96,8 +96,8 @@ public class BookingService {
             throw new ChikChakException("You already have an active booking. Please complete or cancel it before creating a new one.");
         }
 
-        ServiceCategory serviceCategory = serviceCategoryRepository.findById(request.getServiceCategoryId())
-                .orElseThrow(() -> new ChikChakException("Service category not found"));
+        ServiceCategory serviceCategory = serviceCategoryRepository.findByServiceType(request.getServiceType())
+                .orElseThrow(() -> new ChikChakException("Service category not found for type: " + request.getServiceType()));
 
         // Get the selected technician
         TechnicianProfile selectedTechnician = technicianProfileRepository.findById(request.getSelectedTechnicianId())

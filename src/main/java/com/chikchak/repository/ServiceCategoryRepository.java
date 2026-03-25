@@ -1,6 +1,7 @@
 package com.chikchak.repository;
 
 import com.chikchak.model.ServiceCategory;
+import com.chikchak.model.ServiceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +13,6 @@ public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory
     List<ServiceCategory> findByIsActiveOrderByName(Boolean isActive);
 
     Optional<ServiceCategory> findByNameIgnoreCase(String name);
+
+    Optional<ServiceCategory> findByServiceType(ServiceType serviceType);
 }

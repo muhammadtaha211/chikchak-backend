@@ -43,10 +43,26 @@ public class ServiceCategoryService {
             throw new ChikChakException("Service category with this name already exists");
         }
 
+        if (serviceDto.getServiceType() == null) {
+            throw new ChikChakException("Service type is required");
+        }
+
+        ServiceType serviceType;
+        try {
+            serviceType = ServiceType.valueOf(serviceDto.getServiceType());
+        } catch (IllegalArgumentException e) {
+            throw new ChikChakException("Invalid service type: " + serviceDto.getServiceType());
+        }
+
+        if (serviceCategoryRepository.findByServiceType(serviceType).isPresent()) {
+            throw new ChikChakException("Service category with this service type already exists");
+        }
+
         ServiceCategory service = userMapper.toEntity(serviceDto);
+        service.setServiceType(serviceType);
         service = serviceCategoryRepository.save(service);
 
-        log.info("New service category created: {}", service.getName());
+        log.info("New service category created: {} ({})", service.getName(), service.getServiceType());
         return userMapper.toDto(service);
     }
 

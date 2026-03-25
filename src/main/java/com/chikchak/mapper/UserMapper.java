@@ -25,5 +25,6 @@ public interface UserMapper {
 
     ServiceCategoryDto toDto(ServiceCategory serviceCategory);
 
+    @Mapping(target = "serviceType", ignore = true)
     ServiceCategory toEntity(ServiceCategoryDto serviceCategoryDto);
 }
