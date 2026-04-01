@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep:*)",
+      "Bash(git checkout:*)",
+      "Bash(./mvnw compile:*)",
+      "Bash(java -version)",
+      "Bash(JAVA_HOME=\"/c/Program Files/Java/jdk-17\")",
+      "Read(//c/Program Files/Java//**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/USER/.jdks//**)",
+      "Bash(JAVA_HOME=\"/c/Program Files/Java/jdk-21\" ./mvnw compile -q)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(./mvnw clean:*)",
+      "Bash(where java:*)",
+      "Bash(export JAVA_HOME=\"C:/Program Files/Java/jdk-21\")",
+      "Bash(\"$JAVA_HOME/bin/java\" -version)",
+      "Bash(echo \"JAVA_HOME=$JAVA_HOME\")",
+      "Bash(JAVA_HOME=\"/c/Program Files/Eclipse Adoptium/temurin-17.0.17\" ./mvnw compile -q)",
+      "Read(//c/Users/USER/.jdks/**)",
+      "Bash(JAVA_HOME=\"C:/Users/USER/.jdks/temurin-17.0.17\" ./mvnw compile -q)",
+      "Bash(git stash:*)",
+      "Bash(git branch:*)",
+      "Bash(JAVA_HOME=\"/c/Program Files/Java/jdk-21\" PATH=\"/c/Program Files/Java/jdk-21/bin:$PATH\" ./mvnw compile -q)",
+      "Bash(mvn compile:*)",
+      "Bash(./mvnw.cmd compile:*)",
+      "Bash(echo $JAVA_HOME)"
+    ]
+  }
+}
