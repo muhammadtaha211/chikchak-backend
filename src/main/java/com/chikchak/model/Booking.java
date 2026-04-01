@@ -85,6 +85,11 @@ public class Booking extends BaseEntity {
     @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_status", columnDefinition = "VARCHAR(255) DEFAULT 'NOT_APPLICABLE'")
+    @Builder.Default
+    private RefundStatus refundStatus = RefundStatus.NOT_APPLICABLE;
+
     @Column(name = "payment_method")
     private String paymentMethod;
 

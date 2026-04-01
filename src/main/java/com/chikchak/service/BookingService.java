@@ -312,11 +312,18 @@ public class BookingService {
 
     //  Initiate refund for declined booking
     private void initiateRefundProcess(Booking booking) {
-        // Mark payment as ready for refund
-        booking.setPaymentStatus(PaymentStatus.REFUNDED);
+        // Guard: only initiate if no refund is already in flight or completed
+        if (booking.getRefundStatus() != RefundStatus.NOT_APPLICABLE) {
+            log.warn("Refund already initiated for booking {} (status: {}), skipping",
+                    booking.getBookingNumber(), booking.getRefundStatus());
+            return;
+        }
+
+        // Mark as pending customer's refund choice — do NOT process refund yet
+        booking.setRefundStatus(RefundStatus.PENDING_CHOICE);
         bookingRepository.save(booking);
 
-        log.info("Refund initiated for booking {}", booking.getBookingNumber());
+        log.info("Refund initiated for booking {} — awaiting customer choice", booking.getBookingNumber());
     }
 
     // Process refund with customer's choice
@@ -329,26 +336,24 @@ public class BookingService {
             throw new ChikChakException("Access denied");
         }
 
-        // Verify booking is cancelled
-        if (booking.getStatus() != BookingStatus.CANCELLED) {
-            throw new ChikChakException("Booking must be cancelled to process refund");
+        // Guard: only process if refund is pending customer choice
+        if (booking.getRefundStatus() != RefundStatus.PENDING_CHOICE) {
+            throw new ChikChakException("No pending refund choice for this booking");
         }
 
         BigDecimal refundAmount = booking.getTotalAmount();
 
         if (request.getRefundMethod() == RefundMethod.CREDITS) {
-            // Add to account credits (instant)
-            currentUser.setAccountCredits(
-                    currentUser.getAccountCredits().add(refundAmount)
-            );
-            userRepository.save(currentUser);
+            // Atomic credit addition to prevent race conditions
+            userRepository.addAccountCredits(currentUser.getId(), refundAmount);
 
+            booking.setRefundStatus(RefundStatus.PROCESSED_CREDITS);
             log.info("Refunded {} to credits for booking {}", refundAmount, bookingId);
         } else {
             // Process bank refund (integrate with payment gateway)
             // TODO: Integrate with payment processor API
-            // paymentService.processRefund(booking);
 
+            booking.setRefundStatus(RefundStatus.PROCESSED_CARD);
             log.info("Bank refund initiated for {} for booking {}", refundAmount, bookingId);
         }
 
@@ -471,6 +476,11 @@ public class BookingService {
                 updateTechnicianStats(booking.getTechnician());
                 break;
             case CANCELLED:
+                // If payment was pending or in escrow, initiate refund for the customer
+                if (booking.getPaymentStatus() == PaymentStatus.PENDING ||
+                        booking.getPaymentStatus() == PaymentStatus.ESCROW) {
+                    initiateRefundProcess(booking);
+                }
                 notificationService.notifyBookingCancellation(booking);
                 break;
 
@@ -565,6 +575,21 @@ public class BookingService {
             default:
                 throw new ChikChakException("Invalid user role for this operation");
         }
+
+        return bookings.stream()
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<BookingDto> getUnresolvedRefunds() {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.CUSTOMER) {
+            throw new ChikChakException("Only customers can view unresolved refunds");
+        }
+
+        List<Booking> bookings = bookingRepository.findByCustomerIdAndRefundStatus(
+                currentUser.getId(), RefundStatus.PENDING_CHOICE);
 
         return bookings.stream()
                 .map(bookingMapper::toDto)
@@ -698,7 +723,7 @@ public class BookingService {
         return bookingMapper.toDto(booking);
     }
 
-    public void declineAndRefund(Long bookingId, RefundChoiceRequest request) {
+    public void declineAndRefund(Long bookingId) {
         User currentUser = authService.getCurrentUserEntity();
 
         Booking booking = findBookingById(bookingId);
@@ -708,18 +733,12 @@ public class BookingService {
         booking.setProposedDatetime(null);
         bookingRepository.save(booking);
 
-        if (request.getRefundMethod() == RefundMethod.CREDITS) {
-            currentUser.setAccountCredits(
-                    currentUser.getAccountCredits().add(booking.getTotalAmount())
-            );
-            userRepository.save(currentUser);
-        } else {
-            // TODO: Process bank refund via payment gateway
-        }
+        // Set refundStatus = PENDING_CHOICE — customer chooses later via the refund page
+        initiateRefundProcess(booking);
 
         notificationService.notifyBookingCancellation(booking);
 
-        log.info("Booking {} cancelled with {} refund", bookingId, request.getRefundMethod());
+        log.info("Booking {} cancelled — refund pending customer choice", bookingId);
     }
 
     private String formatTimeRange(LocalDateTime start) {

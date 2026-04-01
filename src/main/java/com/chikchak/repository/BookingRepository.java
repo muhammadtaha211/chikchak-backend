@@ -2,6 +2,7 @@ package com.chikchak.repository;
 
 import com.chikchak.model.Booking;
 import com.chikchak.model.BookingStatus;
+import com.chikchak.model.RefundStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -56,4 +57,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByStatusAndArrivalMarkedAtBefore(BookingStatus status, LocalDateTime before);
 
+    List<Booking> findByCustomerIdAndRefundStatus(Long customerId, RefundStatus refundStatus);
 }

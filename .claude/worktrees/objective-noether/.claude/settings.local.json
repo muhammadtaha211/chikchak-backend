@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/USER/Desktop/chikchak-backend/**)",
+      "Bash(cmd.exe /c \"rmdir /s /q .claude\\\\worktrees\\\\objective-noether\")",
+      "Bash(JAVA_HOME=\"/c/Users/USER/.jdks/temurin-17.0.17\" ./mvnw compile -q)",
+      "Read(//c/Users/USER/Desktop/**)",
+      "Bash(cmd.exe /c \"rmdir /s /q C:\\\\Users\\\\USER\\\\Desktop\\\\chikchak-backend\\\\.claude\\\\worktrees\")"
+    ]
+  }
+}

@@ -3,6 +3,7 @@ package com.chikchak.dto;
 import com.chikchak.model.BookingStatus;
 import com.chikchak.model.BookingUrgency;
 import com.chikchak.model.PaymentStatus;
+import com.chikchak.model.RefundStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -67,6 +68,9 @@ public class BookingDto {
 
     @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
+    @Builder.Default
+    private RefundStatus refundStatus = RefundStatus.NOT_APPLICABLE;
 
     @Builder.Default
     private String paymentMethod = "";

@@ -93,12 +93,10 @@ public class BookingController {
 
     // Customer declines (cancels booking)
     @PostMapping("/{id}/decline-booking")
-    @Operation(summary = "Decline booking", description = "Customer declines and cancels booking")
-    public ResponseEntity<ApiResponse<String>> declineBooking(
-            @PathVariable Long id,
-            @Valid @RequestBody RefundChoiceRequest request) {
-        bookingService.declineAndRefund(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Booking cancelled, refund processed", null));
+    @Operation(summary = "Decline booking", description = "Customer declines and cancels booking — refund choice deferred")
+    public ResponseEntity<ApiResponse<String>> declineBooking(@PathVariable Long id) {
+        bookingService.declineAndRefund(id);
+        return ResponseEntity.ok(ApiResponse.success("Booking cancelled — choose your refund method on the refund page", null));
     }
 
     @PostMapping("/{id}/process-refund")
@@ -108,6 +106,13 @@ public class BookingController {
             @Valid @RequestBody RefundChoiceRequest request) {
         bookingService.processRefund(id, request);
         return ResponseEntity.ok(ApiResponse.success("Refund processed successfully", null));
+    }
+
+    @GetMapping("/unresolved-refunds")
+    @Operation(summary = "Get unresolved refunds", description = "Get all bookings with pending refund choice for current customer")
+    public ResponseEntity<ApiResponse<List<BookingDto>>> getUnresolvedRefunds() {
+        List<BookingDto> bookings = bookingService.getUnresolvedRefunds();
+        return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 
     @PostMapping("/{id}/dismiss-rating")
