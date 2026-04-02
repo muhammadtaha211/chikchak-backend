@@ -1,10 +1,12 @@
 // Data Initialization
 package com.chikchak.config;
 
+import com.chikchak.model.JobType;
 import com.chikchak.model.ServiceCategory;
 import com.chikchak.model.ServiceType;
 import com.chikchak.model.User;
 import com.chikchak.model.UserRole;
+import com.chikchak.repository.JobTypeRepository;
 import com.chikchak.repository.ServiceCategoryRepository;
 import com.chikchak.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initData(UserRepository userRepository,
                                ServiceCategoryRepository serviceCategoryRepository,
+                               JobTypeRepository jobTypeRepository,
                                PasswordEncoder passwordEncoder) {
         return args -> {
             // Create default admin user
@@ -43,6 +46,12 @@ public class DataInitializer {
                 log.info("Default service categories created");
             } else {
                 patchExistingServiceTypes(serviceCategoryRepository);
+            }
+
+            // Seed default job types
+            if (jobTypeRepository.count() == 0) {
+                seedJobTypes(serviceCategoryRepository, jobTypeRepository);
+                log.info("Default job types seeded");
             }
         };
     }
@@ -117,6 +126,45 @@ public class DataInitializer {
 
         for (ServiceCategory service : services) {
             repository.save(service);
+        }
+    }
+
+    private void seedJobTypes(ServiceCategoryRepository serviceCategoryRepository,
+                              JobTypeRepository jobTypeRepository) {
+        java.util.Map<ServiceType, String[]> jobTypesByCategory = java.util.Map.of(
+                ServiceType.PLUMBING, new String[]{
+                        "Simple Blockage", "Deep Blockage", "Pipe Replacement",
+                        "Faucet Installation", "Toilet Repair", "Water Heater Repair"
+                },
+                ServiceType.ELECTRICAL, new String[]{
+                        "Outlet Installation", "Light Fixture Installation", "Breaker Panel Repair",
+                        "Wiring Repair", "Ceiling Fan Installation", "Switch Replacement"
+                },
+                ServiceType.AC_REPAIR, new String[]{
+                        "AC Unit Service", "AC Installation", "Refrigerant Recharge",
+                        "Thermostat Replacement", "Duct Cleaning", "Compressor Repair"
+                },
+                ServiceType.MOVERS, new String[]{
+                        "Studio Apartment Move", "1-Bedroom Apartment Move", "2-Bedroom Apartment Move",
+                        "Single Item Move", "Office Move", "Packing Service"
+                }
+        );
+
+        for (var entry : jobTypesByCategory.entrySet()) {
+            ServiceCategory category = serviceCategoryRepository.findByServiceType(entry.getKey())
+                    .orElse(null);
+            if (category == null) {
+                log.warn("ServiceCategory not found for type: {}", entry.getKey());
+                continue;
+            }
+            for (String jobName : entry.getValue()) {
+                JobType jobType = JobType.builder()
+                        .name(jobName)
+                        .nameHe(jobName) // Placeholder — will be replaced with Hebrew
+                        .serviceCategory(category)
+                        .build();
+                jobTypeRepository.save(jobType);
+            }
         }
     }
 
