@@ -222,6 +222,7 @@ public class TechnicianService {
                 .totalEarnings(totalEarnings)
                 .totalJobs(profile.getTotalJobs())
                 .averageRating(profile.getAverageRating())
+                .totalRatings(profile.getTotalRatings())
                 .newRequests(pendingRequests.size())
                 .build();
     }

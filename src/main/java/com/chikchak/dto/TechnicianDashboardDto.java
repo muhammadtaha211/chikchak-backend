@@ -22,5 +22,6 @@ public class TechnicianDashboardDto {
     private BigDecimal totalEarnings;
     private Integer totalJobs;
     private BigDecimal averageRating;
+    private Integer totalRatings;
     private Integer newRequests;
 }

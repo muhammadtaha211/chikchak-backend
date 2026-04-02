@@ -86,13 +86,15 @@ public class RatingService {
 
     private void recalculateTechnicianRating(TechnicianProfile technician) {
         BigDecimal avg = ratingRepository.calculateAverageRatingByTechnicianId(technician.getId());
+        Long count = ratingRepository.countByTechnicianId(technician.getId());
+        technician.setTotalRatings(count != null ? count.intValue() : 0);
         if (avg != null) {
             technician.setAverageRating(avg.setScale(2, RoundingMode.HALF_UP));
         } else {
-            technician.setAverageRating(BigDecimal.ZERO);
+            technician.setAverageRating(new BigDecimal("5.00"));
         }
         technicianProfileRepository.save(technician);
-        log.info("Recalculated average rating for technician {}: {}", technician.getId(), technician.getAverageRating());
+        log.info("Recalculated average rating for technician {}: {} ({} ratings)", technician.getId(), technician.getAverageRating(), technician.getTotalRatings());
     }
 
     @Transactional(readOnly = true)
