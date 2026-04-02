@@ -40,7 +40,12 @@ public class TechnicianProfile extends BaseEntity {
     private Boolean isAvailable = true;
 
     @Column(name = "average_rating", precision = 3, scale = 2)
-    private BigDecimal averageRating=BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal averageRating = new BigDecimal("5.00");
+
+    @Column(name = "total_ratings")
+    @Builder.Default
+    private Integer totalRatings = 0;
 
     @Column(name = "total_jobs")
     @Builder.Default

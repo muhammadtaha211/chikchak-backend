@@ -32,7 +32,10 @@ public class TechnicianProfileDto {
     private Boolean isAvailable = false;
 
     @Builder.Default
-    private Double averageRating = 0.0;
+    private Double averageRating = 5.0;
+
+    @Builder.Default
+    private Integer totalRatings = 0;
 
     @Builder.Default
     private Integer totalJobs = 0;
