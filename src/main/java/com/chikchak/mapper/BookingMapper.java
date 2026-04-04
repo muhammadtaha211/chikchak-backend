@@ -15,6 +15,7 @@ public interface BookingMapper {
 
     @Mapping(target = "photos", source = "photos", qualifiedByName = "stringToList")
     @Mapping(target = "unreadMessagesCount", ignore = true)
+    @Mapping(target = "paidWithCreditsOnly", expression = "java(booking.getCreditsApplied() != null && booking.getTotalAmount() != null && booking.getCreditsApplied().compareTo(java.math.BigDecimal.ZERO) > 0 && booking.getCreditsApplied().compareTo(booking.getTotalAmount()) == 0)")
     BookingDto toDto(Booking booking);
 
     @Mapping(target = "photos", source = "photos", qualifiedByName = "listToString")

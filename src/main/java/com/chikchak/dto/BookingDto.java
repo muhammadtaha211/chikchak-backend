@@ -67,6 +67,15 @@ public class BookingDto {
     private BigDecimal distanceFee = BigDecimal.ZERO;
 
     @Builder.Default
+    private BigDecimal creditsApplied = BigDecimal.ZERO;
+
+    @Builder.Default
+    private Boolean useAccountCredits = false;
+
+    @Builder.Default
+    private Boolean paidWithCreditsOnly = false;
+
+    @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
     @Builder.Default

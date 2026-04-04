@@ -80,6 +80,14 @@ public class Booking extends BaseEntity {
     @Column(name = "distance_fee", precision = 10, scale = 2)
     private BigDecimal distanceFee;
 
+    @Column(name = "credits_applied", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal creditsApplied = BigDecimal.ZERO;
+
+    @Column(name = "use_account_credits")
+    @Builder.Default
+    private Boolean useAccountCredits = false;
+
     // Payment
     @Enumerated(EnumType.STRING)
     @Builder.Default
