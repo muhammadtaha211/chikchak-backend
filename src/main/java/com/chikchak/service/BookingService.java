@@ -169,8 +169,9 @@ public class BookingService {
             customer.setAccountCredits(customer.getAccountCredits().subtract(creditsToUse));
             userRepository.save(customer);
 
-            // Reduce total amount
-            booking.setTotalAmount(booking.getTotalAmount().subtract(creditsToUse));
+            // Track credits applied (keep totalAmount as original price)
+            booking.setCreditsApplied(creditsToUse);
+            booking.setUseAccountCredits(true);
             booking = bookingRepository.save(booking);
 
             log.info("Applied {} credits to booking {}", creditsToUse, bookingNumber);
@@ -342,31 +343,55 @@ public class BookingService {
         }
 
         BigDecimal refundAmount = booking.getTotalAmount();
+        BigDecimal creditsApplied = booking.getCreditsApplied() != null ? booking.getCreditsApplied() : BigDecimal.ZERO;
 
         if (request.getRefundMethod() == RefundMethod.CREDITS) {
-            // Atomic credit addition to prevent race conditions
+            // Refund full totalAmount as credits
             userRepository.addAccountCredits(currentUser.getId(), refundAmount);
 
             booking.setRefundStatus(RefundStatus.PROCESSED_CREDITS);
             log.info("Refunded {} to credits for booking {}", refundAmount, bookingId);
         } else {
-            // Process bank refund (integrate with payment gateway)
-            // TODO: Integrate with payment processor API
+            // BANK refund — split if credits were used
+            if (creditsApplied.compareTo(BigDecimal.ZERO) > 0) {
+                // Return credits portion to account credits
+                userRepository.addAccountCredits(currentUser.getId(), creditsApplied);
+                log.info("Returned {} credits to account for booking {}", creditsApplied, bookingId);
+
+                // Process only the card portion as bank refund
+                BigDecimal cardRefundAmount = refundAmount.subtract(creditsApplied);
+                if (cardRefundAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    // TODO: Integrate with payment processor API
+                    log.info("Bank refund initiated for {} for booking {}", cardRefundAmount, bookingId);
+                }
+            } else {
+                // No credits used — full bank refund
+                // TODO: Integrate with payment processor API
+                log.info("Bank refund initiated for {} for booking {}", refundAmount, bookingId);
+            }
 
             booking.setRefundStatus(RefundStatus.PROCESSED_CARD);
-            log.info("Bank refund initiated for {} for booking {}", refundAmount, bookingId);
         }
 
         booking.setPaymentStatus(PaymentStatus.REFUNDED);
         bookingRepository.save(booking);
 
         // Send confirmation
+        String refundDescription;
+        if (request.getRefundMethod() == RefundMethod.CREDITS) {
+            refundDescription = String.format("Refund of ₪%.2f processed via account credits", refundAmount);
+        } else if (creditsApplied.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal cardPortion = refundAmount.subtract(creditsApplied);
+            refundDescription = String.format("Refund processed: ₪%.2f to account credits + ₪%.2f to original payment method",
+                    creditsApplied, cardPortion);
+        } else {
+            refundDescription = String.format("Refund of ₪%.2f processed via original payment method", refundAmount);
+        }
+
         chatService.sendBookingUpdateMessage(
                 bookingId,
                 "REFUND_PROCESSED",
-                String.format("Refund of ₪%.2f processed via %s",
-                        refundAmount,
-                        request.getRefundMethod() == RefundMethod.CREDITS ? "account credits" : "original payment method")
+                refundDescription
         );
     }
 
