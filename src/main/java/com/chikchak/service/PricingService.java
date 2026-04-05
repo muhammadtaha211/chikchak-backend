@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import lombok.Data;
 import lombok.Builder;
 
+import com.chikchak.model.ServiceType;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -24,10 +26,22 @@ public class PricingService {
     @Value("${chikchak.max-distance-km:50}")
     private Integer maxDistanceKm;
 
-    public PricingCalculation calculateBookingPrice(Double customerLat, Double customerLng,
+    public PricingCalculation calculateBookingPrice(ServiceType serviceType,
+                                                   Double customerLat, Double customerLng,
                                                    Double technicianLat, Double technicianLng,
                                                    BigDecimal baseDiagnosisFee) {
-        
+
+        // Movers have zero fees
+        if (serviceType == ServiceType.MOVERS) {
+            return PricingCalculation.builder()
+                .diagnosisFee(BigDecimal.ZERO)
+                .distanceKm(BigDecimal.ZERO)
+                .distanceFee(BigDecimal.ZERO)
+                .serviceFee(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+        }
+
         // Calculate distance
         BigDecimal distanceKm = calculateDistance(customerLat, customerLng, technicianLat, technicianLng);
         

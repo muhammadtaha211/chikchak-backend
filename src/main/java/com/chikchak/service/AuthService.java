@@ -115,9 +115,24 @@ public class AuthService {
     }
 
     private void createTechnicianProfile(User user, RegisterRequest registerRequest) {
-        if (registerRequest.getBaseDiagnosisFee() == null || 
-            registerRequest.getBaseDiagnosisFee().compareTo(BigDecimal.ZERO) <= 0) {
+        // Check if this is a movers technician — they are allowed baseDiagnosisFee of 0
+        boolean isMovers = false;
+        if (registerRequest.getServiceIds() != null && !registerRequest.getServiceIds().isEmpty()) {
+            isMovers = registerRequest.getServiceIds().stream()
+                .map(serviceCategoryRepository::findById)
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .anyMatch(sc -> sc.getServiceType() == ServiceType.MOVERS);
+        }
+
+        if (registerRequest.getBaseDiagnosisFee() == null) {
             throw new ChikChakException("Base diagnosis fee is required for technicians");
+        }
+        if (!isMovers && registerRequest.getBaseDiagnosisFee().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ChikChakException("Base diagnosis fee must be greater than zero");
+        }
+        if (isMovers && registerRequest.getBaseDiagnosisFee().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ChikChakException("Base diagnosis fee cannot be negative");
         }
 
         TechnicianProfile profile = TechnicianProfile.builder()
