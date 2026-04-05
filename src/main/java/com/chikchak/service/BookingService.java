@@ -315,6 +315,12 @@ public class BookingService {
 
     //  Initiate refund for declined booking
     private void initiateRefundProcess(Booking booking) {
+        // Guard: zero-fee bookings (e.g. movers) have nothing to refund
+        if (booking.getTotalAmount().compareTo(BigDecimal.ZERO) == 0) {
+            log.info("Skipping refund for booking {} — totalAmount is zero", booking.getBookingNumber());
+            return;
+        }
+
         // Guard: only initiate if no refund is already in flight or completed
         if (booking.getRefundStatus() != RefundStatus.NOT_APPLICABLE) {
             log.warn("Refund already initiated for booking {} (status: {}), skipping",
