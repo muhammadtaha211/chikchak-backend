@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -46,8 +44,7 @@ public class TechnicianProfileDto {
     @Builder.Default
     private String workingHours = "";
 
-    @Builder.Default
-    private Set<ServiceCategoryDto> services = new HashSet<>();
+    private ServiceCategoryDto serviceCategory;
 
     @Builder.Default
     private Double distanceFromCustomer = 0.0;

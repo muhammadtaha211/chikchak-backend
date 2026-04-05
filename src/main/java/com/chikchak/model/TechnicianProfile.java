@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 
 // Technician Profile Entity
 @Entity
@@ -60,14 +59,10 @@ public class TechnicianProfile extends BaseEntity {
     @Builder.Default
     private Integer serviceRadius = 25;
 
-    // Services offered
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "technician_services",
-            joinColumns = @JoinColumn(name = "technician_id"),
-            inverseJoinColumns = @JoinColumn(name = "service_category_id")
-    )
-    private Set<ServiceCategory> services;
+    // Service category offered
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "service_category_id")
+    private ServiceCategory serviceCategory;
 
     @OneToMany(mappedBy = "technician", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Booking> bookings;
