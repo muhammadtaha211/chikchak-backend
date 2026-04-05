@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -19,5 +18,5 @@ public class UpdateTechnicianProfileRequest {
     private Boolean isAvailable;
     private Integer serviceRadius;
     private String workingHours;
-    private Set<Long> serviceIds;
+    private Long serviceId;
 }

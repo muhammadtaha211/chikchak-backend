@@ -16,10 +16,10 @@ public interface TechnicianProfileRepository extends JpaRepository<TechnicianPro
 
     List<TechnicianProfile> findByIsVerifiedAndIsAvailable(Boolean isVerified, Boolean isAvailable);
 
-    @Query("SELECT t FROM TechnicianProfile t JOIN t.services s WHERE s.id = :serviceId AND t.isVerified = true AND t.isAvailable = true")
+    @Query("SELECT t FROM TechnicianProfile t WHERE t.serviceCategory.id = :serviceId AND t.isVerified = true AND t.isAvailable = true")
     List<TechnicianProfile> findAvailableTechniciansByService(@Param("serviceId") Long serviceId);
 
-    @Query("SELECT t FROM TechnicianProfile t JOIN t.services s WHERE s.serviceType = :serviceType AND t.isVerified = true AND t.isAvailable = true")
+    @Query("SELECT t FROM TechnicianProfile t WHERE t.serviceCategory.serviceType = :serviceType AND t.isVerified = true AND t.isAvailable = true")
     List<TechnicianProfile> findAvailableTechniciansByServiceType(@Param("serviceType") ServiceType serviceType);
 
     @Query("SELECT t FROM TechnicianProfile t WHERE t.isVerified = true AND t.isAvailable = true " +
@@ -32,8 +32,8 @@ public interface TechnicianProfileRepository extends JpaRepository<TechnicianPro
             @Param("longitude") Double longitude
     );
 
-    @Query("SELECT t FROM TechnicianProfile t JOIN t.services s " +
-            "WHERE s.id = :serviceId AND t.isVerified = true AND t.isAvailable = true " +
+    @Query("SELECT t FROM TechnicianProfile t " +
+            "WHERE t.serviceCategory.id = :serviceId AND t.isVerified = true AND t.isAvailable = true " +
             "AND (:latitude IS NULL OR :longitude IS NULL OR " +
             "(6371 * acos(cos(radians(:latitude)) * cos(radians(t.user.latitude)) * " +
             "cos(radians(t.user.longitude) - radians(:longitude)) + " +
@@ -45,8 +45,8 @@ public interface TechnicianProfileRepository extends JpaRepository<TechnicianPro
             @Param("longitude") Double longitude
     );
 
-    @Query("SELECT t FROM TechnicianProfile t JOIN t.services s " +
-            "WHERE s.serviceType = :serviceType AND t.isVerified = true AND t.isAvailable = true " +
+    @Query("SELECT t FROM TechnicianProfile t " +
+            "WHERE t.serviceCategory.serviceType = :serviceType AND t.isVerified = true AND t.isAvailable = true " +
             "AND (:latitude IS NULL OR :longitude IS NULL OR " +
             "(6371 * acos(cos(radians(:latitude)) * cos(radians(t.user.latitude)) * " +
             "cos(radians(t.user.longitude) - radians(:longitude)) + " +

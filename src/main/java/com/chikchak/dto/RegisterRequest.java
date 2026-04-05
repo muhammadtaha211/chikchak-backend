@@ -11,7 +11,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -45,5 +44,5 @@ public class RegisterRequest {
     private BigDecimal baseDiagnosisFee;
     private String bio;
     private Integer yearsExperience;
-    private Set<Long> serviceIds;
+    private Long serviceId;
 }

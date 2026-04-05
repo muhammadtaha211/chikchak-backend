@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -115,15 +113,15 @@ public class AuthService {
     }
 
     private void createTechnicianProfile(User user, RegisterRequest registerRequest) {
-        // Check if this is a movers technician — they are allowed baseDiagnosisFee of 0
-        boolean isMovers = false;
-        if (registerRequest.getServiceIds() != null && !registerRequest.getServiceIds().isEmpty()) {
-            isMovers = registerRequest.getServiceIds().stream()
-                .map(serviceCategoryRepository::findById)
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
-                .anyMatch(sc -> sc.getServiceType() == ServiceType.MOVERS);
+        // Look up the service category
+        ServiceCategory serviceCategory = null;
+        if (registerRequest.getServiceId() != null) {
+            serviceCategory = serviceCategoryRepository.findById(registerRequest.getServiceId())
+                .orElseThrow(() -> new ChikChakException("Service category not found: " + registerRequest.getServiceId()));
         }
+
+        // Check if this is a movers technician — they are allowed baseDiagnosisFee of 0
+        boolean isMovers = serviceCategory != null && serviceCategory.getServiceType() == ServiceType.MOVERS;
 
         if (registerRequest.getBaseDiagnosisFee() == null) {
             throw new ChikChakException("Base diagnosis fee is required for technicians");
@@ -142,18 +140,8 @@ public class AuthService {
             .yearsExperience(registerRequest.getYearsExperience())
             .isVerified(false) // Requires admin approval
             .isAvailable(true)
+            .serviceCategory(serviceCategory)
             .build();
-
-        // Add services if provided
-        if (registerRequest.getServiceIds() != null && !registerRequest.getServiceIds().isEmpty()) {
-            Set<ServiceCategory> services = new HashSet<>();
-            for (Long serviceId : registerRequest.getServiceIds()) {
-                ServiceCategory service = serviceCategoryRepository.findById(serviceId)
-                    .orElseThrow(() -> new ChikChakException("Service category not found: " + serviceId));
-                services.add(service);
-            }
-            profile.setServices(services);
-        }
 
         technicianProfileRepository.save(profile);
     }

@@ -11,9 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -154,15 +152,11 @@ public class TechnicianService {
             profile.setWorkingHours(request.getWorkingHours());
         }
 
-        // Update services
-        if (request.getServiceIds() != null) {
-            Set<ServiceCategory> services = new HashSet<>();
-            for (Long serviceId : request.getServiceIds()) {
-                ServiceCategory service = serviceCategoryRepository.findById(serviceId)
-                        .orElseThrow(() -> new ChikChakException("Service category not found: " + serviceId));
-                services.add(service);
-            }
-            profile.setServices(services);
+        // Update service category
+        if (request.getServiceId() != null) {
+            ServiceCategory serviceCategory = serviceCategoryRepository.findById(request.getServiceId())
+                    .orElseThrow(() -> new ChikChakException("Service category not found: " + request.getServiceId()));
+            profile.setServiceCategory(serviceCategory);
         }
 
         profile = technicianProfileRepository.save(profile);
