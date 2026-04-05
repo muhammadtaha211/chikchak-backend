@@ -50,6 +50,7 @@ public class BookingService {
 
         // Calculate base pricing
         PricingService.PricingCalculation pricing = pricingService.calculateBookingPrice(
+                request.getServiceType(),
                 request.getCustomerLatitude(),
                 request.getCustomerLongitude(),
                 technician.getUser().getLatitude(),
@@ -113,6 +114,7 @@ public class BookingService {
 
         // Calculate pricing
         PricingService.PricingCalculation pricing = pricingService.calculateBookingPrice(
+                request.getServiceType(),
                 request.getServiceLatitude(),
                 request.getServiceLongitude(),
                 selectedTechnician.getUser().getLatitude(),
