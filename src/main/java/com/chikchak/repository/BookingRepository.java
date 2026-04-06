@@ -58,4 +58,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStatusAndArrivalMarkedAtBefore(BookingStatus status, LocalDateTime before);
 
     List<Booking> findByCustomerIdAndRefundStatus(Long customerId, RefundStatus refundStatus);
+
+    List<Booking> findByStatusInAndCreatedAtBefore(List<BookingStatus> statuses, LocalDateTime before);
+
+    List<Booking> findByStatusAndProposedDatetimeBefore(BookingStatus status, LocalDateTime before);
 }
