@@ -53,12 +53,18 @@ public class AuthService {
                 user.getRole().name()
             );
 
+            Boolean isVerified = null;
+            if (user.getRole() == UserRole.TECHNICIAN && user.getTechnicianProfile() != null) {
+                isVerified = user.getTechnicianProfile().getIsVerified();
+            }
+
             UserDto userDto = userMapper.toDto(user);
 
             log.info("User {} logged in successfully", user.getEmail());
 
             return AuthResponse.builder()
                 .token(token)
+                .isVerified(isVerified)
                 .user(userDto)
                 .build();
 
@@ -91,8 +97,10 @@ public class AuthService {
         user = userRepository.save(user);
 
         // Create technician profile if user is a technician
+        Boolean isVerified = null;
         if (registerRequest.getRole() == UserRole.TECHNICIAN) {
-            createTechnicianProfile(user, registerRequest);
+            TechnicianProfile profile = createTechnicianProfile(user, registerRequest);
+            isVerified = profile.getIsVerified();
         }
 
         // Generate token
@@ -108,11 +116,12 @@ public class AuthService {
 
         return AuthResponse.builder()
             .token(token)
+            .isVerified(isVerified)
             .user(userDto)
             .build();
     }
 
-    private void createTechnicianProfile(User user, RegisterRequest registerRequest) {
+    private TechnicianProfile createTechnicianProfile(User user, RegisterRequest registerRequest) {
         // Look up the service category
         ServiceCategory serviceCategory = null;
         if (registerRequest.getServiceId() != null) {
@@ -143,7 +152,7 @@ public class AuthService {
             .serviceCategory(serviceCategory)
             .build();
 
-        technicianProfileRepository.save(profile);
+        return technicianProfileRepository.save(profile);
     }
 
     public UserDto getCurrentUser() {
