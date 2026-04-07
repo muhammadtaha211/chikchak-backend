@@ -124,9 +124,9 @@ public class AuthService {
     private TechnicianProfile createTechnicianProfile(User user, RegisterRequest registerRequest) {
         // Look up the service category
         ServiceCategory serviceCategory = null;
-        if (registerRequest.getServiceId() != null) {
-            serviceCategory = serviceCategoryRepository.findById(registerRequest.getServiceId())
-                .orElseThrow(() -> new ChikChakException("Service category not found: " + registerRequest.getServiceId()));
+        if (registerRequest.getServiceType() != null) {
+            serviceCategory = serviceCategoryRepository.findByServiceType(registerRequest.getServiceType())
+                .orElseThrow(() -> new ChikChakException("Service category not found: " + registerRequest.getServiceType()));
         }
 
         // Check if this is a movers technician — they are allowed baseDiagnosisFee of 0
@@ -134,6 +134,9 @@ public class AuthService {
 
         if (registerRequest.getBaseDiagnosisFee() == null) {
             throw new ChikChakException("Base diagnosis fee is required for technicians");
+        }
+        if (registerRequest.getYearsExperience() == null) {
+            throw new ChikChakException("Years of experience is required for technicians");
         }
         if (!isMovers && registerRequest.getBaseDiagnosisFee().compareTo(BigDecimal.ZERO) <= 0) {
             throw new ChikChakException("Base diagnosis fee must be greater than zero");

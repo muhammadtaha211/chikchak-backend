@@ -1,5 +1,6 @@
 package com.chikchak.dto;
 
+import com.chikchak.model.ServiceType;
 import com.chikchak.model.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -44,5 +45,5 @@ public class RegisterRequest {
     private BigDecimal baseDiagnosisFee;
     private String bio;
     private Integer yearsExperience;
-    private Long serviceId;
+    private ServiceType serviceType;
 }
