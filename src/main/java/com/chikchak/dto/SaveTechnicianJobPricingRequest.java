@@ -33,5 +33,7 @@ public class SaveTechnicianJobPricingRequest {
 
         @NotNull
         private BigDecimal maxPrice;
+
+        private Boolean isOffered = true;
     }
 }

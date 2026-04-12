@@ -20,4 +20,6 @@ public class TechnicianJobPricingDto {
     private String jobTypeNameHe = "";
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
+    @Builder.Default
+    private Boolean isOffered = true;
 }
