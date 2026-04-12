@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chikchak.config.DataInitializer;
 import java.math.BigDecimal;
 
 @Service
@@ -129,25 +130,17 @@ public class AuthService {
                 .orElseThrow(() -> new ChikChakException("Service category not found: " + registerRequest.getServiceType()));
         }
 
-        // Check if this is a movers technician — they are allowed baseDiagnosisFee of 0
+        // Set standardized visit fee based on service category
         boolean isMovers = serviceCategory != null && serviceCategory.getServiceType() == ServiceType.MOVERS;
+        BigDecimal diagnosisFee = isMovers ? DataInitializer.MOVERS_DIAGNOSIS_FEE : DataInitializer.STANDARD_DIAGNOSIS_FEE;
 
-        if (registerRequest.getBaseDiagnosisFee() == null) {
-            throw new ChikChakException("Base diagnosis fee is required for technicians");
-        }
         if (registerRequest.getYearsExperience() == null) {
             throw new ChikChakException("Years of experience is required for technicians");
-        }
-        if (!isMovers && registerRequest.getBaseDiagnosisFee().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ChikChakException("Base diagnosis fee must be greater than zero");
-        }
-        if (isMovers && registerRequest.getBaseDiagnosisFee().compareTo(BigDecimal.ZERO) < 0) {
-            throw new ChikChakException("Base diagnosis fee cannot be negative");
         }
 
         TechnicianProfile profile = TechnicianProfile.builder()
             .user(user)
-            .baseDiagnosisFee(registerRequest.getBaseDiagnosisFee())
+            .baseDiagnosisFee(diagnosisFee)
             .bio(registerRequest.getBio())
             .yearsExperience(registerRequest.getYearsExperience())
             .isVerified(false) // Requires admin approval

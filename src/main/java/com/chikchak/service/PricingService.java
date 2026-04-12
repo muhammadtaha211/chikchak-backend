@@ -52,7 +52,8 @@ public class PricingService {
         
         // Calculate distance fee
         BigDecimal distanceFee = distanceKm.multiply(baseDistanceRate)
-            .setScale(2, RoundingMode.HALF_UP);
+            .divide(BigDecimal.TEN, 0, RoundingMode.CEILING)
+            .multiply(BigDecimal.TEN);
         
         // Total diagnosis fee = base fee + distance fee
         BigDecimal totalDiagnosisFee = baseDiagnosisFee.add(distanceFee);

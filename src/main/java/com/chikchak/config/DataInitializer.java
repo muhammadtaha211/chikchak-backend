@@ -16,10 +16,24 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
+
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer {
+
+    // Standardized visit fee for all technicians (MOVERS get ₪0)
+    public static final BigDecimal STANDARD_DIAGNOSIS_FEE = new BigDecimal("80");
+    public static final BigDecimal MOVERS_DIAGNOSIS_FEE = BigDecimal.ZERO;
+
+    /*
+     * SQL to update existing technician profiles to the standardized visit fee:
+     *
+     * UPDATE technician_profiles SET base_diagnosis_fee = 80;
+     * UPDATE technician_profiles SET base_diagnosis_fee = 0
+     *   WHERE service_category_id IN (SELECT id FROM service_categories WHERE service_type = 'MOVERS');
+     */
 
     @Bean
     CommandLineRunner initData(UserRepository userRepository,
