@@ -44,6 +44,13 @@ public class TechnicianController {
         return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 
+    @GetMapping("/profile")
+    @Operation(summary = "Get technician profile", description = "Get current technician's profile details")
+    public ResponseEntity<ApiResponse<TechnicianProfileDto>> getProfile() {
+        TechnicianProfileDto profile = technicianService.getCurrentTechnicianProfile();
+        return ResponseEntity.ok(ApiResponse.success(profile));
+    }
+
     @PutMapping("/profile")
     @Operation(summary = "Update technician profile", description = "Update technician-specific profile details")
     public ResponseEntity<ApiResponse<TechnicianProfileDto>> updateProfile(

@@ -122,6 +122,20 @@ public class TechnicianService {
         return pricingService.calculateDistance(lat1, lng1, lat2, lng2).doubleValue();
     }
 
+    @Transactional(readOnly = true)
+    public TechnicianProfileDto getCurrentTechnicianProfile() {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.TECHNICIAN) {
+            throw new ChikChakException("Only technicians can access technician profile");
+        }
+
+        TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+
+        return userMapper.toDto(profile);
+    }
+
     public TechnicianProfileDto updateTechnicianProfile(UpdateTechnicianProfileRequest request) {
         User currentUser = authService.getCurrentUserEntity();
 
