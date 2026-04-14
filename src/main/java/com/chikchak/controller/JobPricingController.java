@@ -34,7 +34,14 @@ public class JobPricingController {
     @Operation(summary = "Get technician pricing", description = "Returns a technician's offered jobs with price ranges")
     public ResponseEntity<ApiResponse<List<TechnicianJobPricingDto>>> getTechnicianPricing(
             @PathVariable Long technicianId) {
-        List<TechnicianJobPricingDto> pricing = jobPricingService.getTechnicianPricing(technicianId);
+        List<TechnicianJobPricingDto> pricing = jobPricingService.getOfferedTechnicianPricing(technicianId);
+        return ResponseEntity.ok(ApiResponse.success(pricing));
+    }
+
+    @GetMapping("/api/technician/job-pricing")
+    @Operation(summary = "Get my job pricing", description = "Returns all the technician's jobs with price ranges, including non-offered")
+    public ResponseEntity<ApiResponse<List<TechnicianJobPricingDto>>> getMyPricing() {
+        List<TechnicianJobPricingDto> pricing = jobPricingService.getMyPricing();
         return ResponseEntity.ok(ApiResponse.success(pricing));
     }
 

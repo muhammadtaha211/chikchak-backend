@@ -41,8 +41,17 @@ public class JobPricingService {
     }
 
     @Transactional(readOnly = true)
+    public List<TechnicianJobPricingDto> getOfferedTechnicianPricing(Long technicianId) {
+        technicianProfileRepository.findById(technicianId)
+                .orElseThrow(() -> new ChikChakException("Technician not found"));
+
+        List<TechnicianJobPricing> pricings = technicianJobPricingRepository
+                .findByTechnicianIdAndIsOfferedTrueOrderByJobTypeName(technicianId);
+        return technicianJobPricingMapper.toDtoList(pricings);
+    }
+
+    @Transactional(readOnly = true)
     public List<TechnicianJobPricingDto> getTechnicianPricing(Long technicianId) {
-        // Verify technician exists
         technicianProfileRepository.findById(technicianId)
                 .orElseThrow(() -> new ChikChakException("Technician not found"));
 
@@ -51,16 +60,20 @@ public class JobPricingService {
         return technicianJobPricingMapper.toDtoList(pricings);
     }
 
+    @Transactional(readOnly = true)
+    public List<TechnicianJobPricingDto> getMyPricing() {
+        User currentUser = authService.getCurrentUserEntity();
+        TechnicianProfile technician = technicianProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+        return getTechnicianPricing(technician.getId());
+    }
+
     public List<TechnicianJobPricingDto> saveTechnicianPricing(SaveTechnicianJobPricingRequest request) {
         User currentUser = authService.getCurrentUserEntity();
         TechnicianProfile technician = technicianProfileRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ChikChakException("Technician profile not found"));
 
-        // Delete existing pricing
-        technicianJobPricingRepository.deleteByTechnicianId(technician.getId());
-
-        // Save new pricing
-        List<TechnicianJobPricing> newPricings = new ArrayList<>();
+        List<TechnicianJobPricing> pricingsToSave = new ArrayList<>();
         for (SaveTechnicianJobPricingRequest.JobPricingItem item : request.getItems()) {
             JobType jobType = jobTypeRepository.findById(item.getJobTypeId())
                     .orElseThrow(() -> new ChikChakException("Job type not found: " + item.getJobTypeId()));
@@ -69,16 +82,29 @@ public class JobPricingService {
                 throw new ChikChakException("Min price cannot be greater than max price for job: " + jobType.getName());
             }
 
-            TechnicianJobPricing pricing = TechnicianJobPricing.builder()
-                    .technician(technician)
-                    .jobType(jobType)
-                    .minPrice(item.getMinPrice())
-                    .maxPrice(item.getMaxPrice())
-                    .build();
-            newPricings.add(pricing);
+            Boolean offered = item.getIsOffered() != null ? item.getIsOffered() : true;
+
+            // Upsert: update existing record or create new one
+            TechnicianJobPricing pricing = technicianJobPricingRepository
+                    .findByTechnicianIdAndJobTypeId(technician.getId(), item.getJobTypeId())
+                    .map(existing -> {
+                        existing.setMinPrice(item.getMinPrice());
+                        existing.setMaxPrice(item.getMaxPrice());
+                        existing.setIsOffered(offered);
+                        return existing;
+                    })
+                    .orElseGet(() -> TechnicianJobPricing.builder()
+                            .technician(technician)
+                            .jobType(jobType)
+                            .minPrice(item.getMinPrice())
+                            .maxPrice(item.getMaxPrice())
+                            .isOffered(offered)
+                            .build());
+
+            pricingsToSave.add(pricing);
         }
 
-        List<TechnicianJobPricing> saved = technicianJobPricingRepository.saveAll(newPricings);
+        List<TechnicianJobPricing> saved = technicianJobPricingRepository.saveAll(pricingsToSave);
         log.info("Saved {} job pricings for technician {}", saved.size(), technician.getId());
         return technicianJobPricingMapper.toDtoList(saved);
     }

@@ -30,4 +30,8 @@ public class TechnicianJobPricing extends BaseEntity {
 
     @Column(name = "max_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal maxPrice;
+
+    @Column(name = "is_offered")
+    @Builder.Default
+    private Boolean isOffered = true;
 }
