@@ -44,6 +44,20 @@ public class TechnicianController {
         return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 
+    @GetMapping("/bookings/history")
+    @Operation(summary = "Get technician job history",
+            description = "Get completed and cancelled bookings for the current authenticated technician")
+    public ResponseEntity<ApiResponse<List<BookingDto>>> getJobHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size);
+
+        List<BookingDto> bookings = bookingService.getCurrentTechnicianJobHistory(pageable);
+        return ResponseEntity.ok(ApiResponse.success(bookings));
+    }
+
     @GetMapping("/profile")
     @Operation(summary = "Get technician profile", description = "Get current technician's profile details")
     public ResponseEntity<ApiResponse<TechnicianProfileDto>> getProfile() {

@@ -50,6 +50,7 @@ public class BookingDto {
     private LocalDateTime proposedDatetime;
     private LocalDateTime scheduledDatetime;
     private LocalDateTime completedDatetime;
+    private LocalDateTime cancelledDatetime;
 
     @Builder.Default
     private BigDecimal diagnosisFee = BigDecimal.ZERO;

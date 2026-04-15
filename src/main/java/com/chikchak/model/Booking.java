@@ -64,6 +64,9 @@ public class Booking extends BaseEntity {
     @Column(name = "completed_datetime")
     private LocalDateTime completedDatetime;
 
+    @Column(name = "cancelled_datetime")
+    private LocalDateTime cancelledDatetime;
+
     // Pricing
     @Column(name = "diagnosis_fee", precision = 10, scale = 2)
     private BigDecimal diagnosisFee;
