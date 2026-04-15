@@ -44,6 +44,7 @@ public class BookingTimeoutScheduler {
 
         for (Booking booking : timedOutBookings) {
             booking.setStatus(BookingStatus.CANCELLED);
+            booking.setCancelledDatetime(LocalDateTime.now());
             booking.setPaymentStatus(PaymentStatus.CANCELLED);
             initiateRefundProcess(booking);
             bookingRepository.save(booking);
@@ -74,6 +75,7 @@ public class BookingTimeoutScheduler {
 
         for (Booking booking : timedOutProposals) {
             booking.setStatus(BookingStatus.CANCELLED);
+            booking.setCancelledDatetime(LocalDateTime.now());
             booking.setPaymentStatus(PaymentStatus.CANCELLED);
             initiateRefundProcess(booking);
             bookingRepository.save(booking);

@@ -289,6 +289,7 @@ public class BookingService {
 
     private BookingDto declineBooking(Booking booking, String reason) {
         booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledDatetime(LocalDateTime.now());
         booking = bookingRepository.save(booking);
 
         createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.CANCELLED,
@@ -458,6 +459,27 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<BookingDto> getCurrentTechnicianJobHistory(Pageable pageable) {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.TECHNICIAN) {
+            throw new ChikChakException("Only technicians can access job history");
+        }
+
+        TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+
+        List<BookingStatus> historyStatuses = List.of(BookingStatus.COMPLETED, BookingStatus.CANCELLED);
+
+        Page<Booking> bookings = bookingRepository.findByTechnicianIdAndStatusInOrderByCreatedAtDesc(
+                profile.getId(), historyStatuses, pageable);
+
+        return bookings.getContent().stream()
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
     public BookingDto updateBookingStatus(Long bookingId, BookingUpdateRequest request) {
         User currentUser = authService.getCurrentUserEntity();
         Booking booking = findBookingById(bookingId);
@@ -509,6 +531,7 @@ public class BookingService {
                 updateTechnicianStats(booking.getTechnician());
                 break;
             case CANCELLED:
+                booking.setCancelledDatetime(LocalDateTime.now());
                 // If payment was pending or in escrow, initiate refund for the customer
                 if (booking.getPaymentStatus() == PaymentStatus.PENDING ||
                         booking.getPaymentStatus() == PaymentStatus.ESCROW) {
@@ -763,6 +786,7 @@ public class BookingService {
         validateBookingAccess(booking, currentUser);
 
         booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledDatetime(LocalDateTime.now());
         booking.setProposedDatetime(null);
         bookingRepository.save(booking);
 
