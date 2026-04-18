@@ -737,7 +737,7 @@ public class BookingService {
         return bookingMapper.toDto(booking);
     }
 
-    public BookingDto acceptProposedTime(Long bookingId) {
+    public BookingDto acceptProposedTime(Long bookingId, LocalDateTime expectedProposedDatetime) {
         User currentUser = authService.getCurrentUserEntity();
 
         if (currentUser.getRole() != UserRole.CUSTOMER) {
@@ -745,8 +745,6 @@ public class BookingService {
         }
 
         Booking booking = findBookingById(bookingId);
-
-
 
         if (booking.getStatus() != BookingStatus.TIME_DISCUSSION) {
             throw new ChikChakException("No active time discussion for this booking");
@@ -756,9 +754,8 @@ public class BookingService {
             throw new ChikChakException("No time proposal to accept");
         }
 
-
-        if (booking.getProposedDatetime() == null) {
-            throw new ChikChakException("No time proposal to accept");
+        if (!booking.getProposedDatetime().equals(expectedProposedDatetime)) {
+            throw new ChikChakException("This proposal is no longer current. Please refresh and review the new time.");
         }
 
         booking.setScheduledDatetime(booking.getProposedDatetime());

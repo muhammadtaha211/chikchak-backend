@@ -37,7 +37,8 @@
       "Bash(./mvnw -version)",
       "Bash(./mvnw -q compile)",
       "Bash(java --version)",
-      "Bash(unzip -o \"C:/Users/USER/Downloads/llm-council.zip\" \"llm-council/SKILL.md\" -d \"C:/Users/USER/.claude/skills\")"
+      "Bash(unzip -o \"C:/Users/USER/Downloads/llm-council.zip\" \"llm-council/SKILL.md\" -d \"C:/Users/USER/.claude/skills\")",
+      "Bash(./mvnw -v)"
     ]
   }
 }
