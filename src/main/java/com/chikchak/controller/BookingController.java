@@ -86,8 +86,10 @@ public class BookingController {
     // Customer accepts proposed time
     @PostMapping("/{id}/accept-proposed-time")
     @Operation(summary = "Accept proposed time", description = "Customer accepts the proposed time")
-    public ResponseEntity<ApiResponse<BookingDto>> acceptProposedTime(@PathVariable Long id) {
-        BookingDto booking = bookingService.acceptProposedTime(id);
+    public ResponseEntity<ApiResponse<BookingDto>> acceptProposedTime(
+            @PathVariable Long id,
+            @Valid @RequestBody AcceptProposedTimeRequest request) {
+        BookingDto booking = bookingService.acceptProposedTime(id, request.getProposedDatetime());
         return ResponseEntity.ok(ApiResponse.success("Time accepted", booking));
     }
 
