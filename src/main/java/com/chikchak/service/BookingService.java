@@ -273,10 +273,10 @@ public class BookingService {
                 "Technician requested time discussion");
 
         // Send time proposal in chat
-        chatService.sendTimeProposalMessage(
+        chatService.sendBookingUpdateMessage(
                 booking.getId(),
-                suggestedTime,
-                message
+                "TIME_PROPOSED",
+                "Technician proposed a new time: " + formatTimeRange(suggestedTime)
         );
 
         // Notify customer
@@ -741,10 +741,10 @@ public class BookingService {
         booking.setStatus(BookingStatus.TIME_DISCUSSION);
         booking = bookingRepository.save(booking);
 
-        chatService.sendTimeProposalMessage(
+        chatService.sendBookingUpdateMessage(
                 bookingId,
-                request.getProposedDatetime(),
-                request.getMessage()
+                "TIME_PROPOSED",
+                "Technician proposed a new time: " + formatTimeRange(request.getProposedDatetime())
         );
 
         notificationService.notifyCustomerTimeProposal(booking);

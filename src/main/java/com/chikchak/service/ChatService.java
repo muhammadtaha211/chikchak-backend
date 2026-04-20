@@ -13,9 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -362,54 +360,5 @@ public class ChatService {
 
         return createChatForBooking(booking);
     }
-
-    public ChatMessageDto sendTimeProposalMessage(Long bookingId, LocalDateTime proposedTime, String optionalMessage) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ChikChakException("Booking not found"));
-
-        User technician = booking.getTechnician().getUser();
-
-        // Get or create Chat for this booking
-        Chat chat = booking.getChat();
-        if (chat == null) {
-            // Create chat if it doesn't exist yet
-            chat = Chat.builder()
-                    .booking(booking)
-                    .build();
-            chat = chatRepository.save(chat);
-            booking.setChat(chat);
-            bookingRepository.save(booking);
-        }
-
-        // Create TIME_PROPOSAL message
-        ChatMessage message = ChatMessage.builder()
-                .chat(chat)  // ← Use chat, not booking
-                .sender(technician)
-                .message(String.format(
-                        "Unfortunately I'm unavailable during the time you chose, however I'm available on %s, %s - %s. Please go to the tracking page to accept or cancel the booking.",
-                        proposedTime.format(DateTimeFormatter.ofPattern("MMM dd")),
-                        proposedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                        proposedTime.plusHours(2).format(DateTimeFormatter.ofPattern("HH:mm"))
-                ))
-                .messageType(MessageType.TIME_PROPOSAL)
-                .isRead(false)
-                .build();
-
-        message = chatMessageRepository.save(message);
-
-        ChatMessageDto messageDto = bookingMapper.toDto(message);
-
-        // Send real-time notification
-        messagingTemplate.convertAndSendToUser(
-                booking.getCustomer().getId().toString(),
-                "/queue/messages",
-                messageDto
-        );
-
-        log.info("Time proposal message sent for booking {}", bookingId);
-
-        return messageDto;
-    }
-
 
 }
