@@ -23,9 +23,8 @@ public class JacksonConfig {
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
 
-        // DateTime: always serialize with 'Z' suffix for FlutterFlow
         JavaTimeModule timeModule = new JavaTimeModule();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         timeModule.addSerializer(java.time.LocalDateTime.class, new LocalDateTimeSerializer(formatter));
         mapper.registerModule(timeModule);
 
