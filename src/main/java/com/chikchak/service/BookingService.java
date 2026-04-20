@@ -669,6 +669,23 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    public List<BookingDto> getTimeDiscussionBookingsForTechnician() {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.TECHNICIAN) {
+            throw new ChikChakException("Only technicians can view time discussion bookings");
+        }
+
+        TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+
+        List<Booking> bookings = bookingRepository.findByTechnicianIdAndStatus(profile.getId(), BookingStatus.TIME_DISCUSSION);
+
+        return bookings.stream()
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
     public CustomerDashboardDto getCustomerDashboard() {
         User currentUser = authService.getCurrentUserEntity();
 
