@@ -44,6 +44,14 @@ public class TechnicianController {
         return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 
+    @GetMapping("/bookings/time-discussion")
+    @Operation(summary = "Get time-discussion bookings",
+            description = "Get bookings where technician has proposed a new time and is awaiting customer response (status TIME_DISCUSSION)")
+    public ResponseEntity<ApiResponse<List<BookingDto>>> getTimeDiscussionBookings() {
+        List<BookingDto> bookings = bookingService.getTimeDiscussionBookingsForTechnician();
+        return ResponseEntity.ok(ApiResponse.success(bookings));
+    }
+
     @GetMapping("/bookings/history")
     @Operation(summary = "Get technician job history",
             description = "Get completed and cancelled bookings for the current authenticated technician")
