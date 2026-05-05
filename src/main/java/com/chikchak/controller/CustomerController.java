@@ -3,6 +3,7 @@ package com.chikchak.controller;
 import com.chikchak.dto.*;
 import com.chikchak.service.AuthService;
 import com.chikchak.service.BookingService;
+import com.chikchak.service.TechnicianDemandService;
 import com.chikchak.service.TechnicianService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class CustomerController {
 
     private final BookingService bookingService;
     private final TechnicianService technicianService;
+    private final TechnicianDemandService technicianDemandService;
     private final AuthService authService;
 
     @GetMapping("/bookings")
@@ -53,5 +55,14 @@ public class CustomerController {
     public ResponseEntity<ApiResponse<CustomerDashboardDto>> getDashboard() {
         CustomerDashboardDto dashboard = bookingService.getCustomerDashboard();
         return ResponseEntity.ok(ApiResponse.success(dashboard));
+    }
+
+    @PostMapping("/notify-when-available")
+    @Operation(summary = "Register interest in technician availability",
+            description = "Customer registers a demand signal when their search returned no available technicians. Returns the existing demand record if the same customer already has a PENDING request for the same service type within the last 24 hours.")
+    public ResponseEntity<ApiResponse<TechnicianDemandRequestDto>> notifyWhenAvailable(
+            @Valid @RequestBody CreateDemandRequestDto request) {
+        TechnicianDemandRequestDto dto = technicianDemandService.createDemandRequest(request);
+        return ResponseEntity.ok(ApiResponse.success("We'll notify you when a technician becomes available", dto));
     }
 }
