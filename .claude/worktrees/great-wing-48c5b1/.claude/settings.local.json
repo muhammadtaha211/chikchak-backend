@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/USER/Desktop/chikchak-backend/**)",
+      "Bash(java -version)",
+      "Bash(./mvnw compile *)"
+    ]
+  }
+}
