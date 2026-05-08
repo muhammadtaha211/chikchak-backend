@@ -45,7 +45,16 @@
       "Bash(./mvnw -q -DskipTests compile)",
       "Bash(./mvnw -q --version)",
       "Bash(./mvnw -DskipTests compile)",
-      "Bash(git restore *)"
+      "Bash(git restore *)",
+      "WebFetch(domain:search.maven.org)",
+      "WebFetch(domain:repo.maven.apache.org)",
+      "WebFetch(domain:central.sonatype.com)",
+      "WebFetch(domain:repo1.maven.org)",
+      "WebSearch",
+      "Bash(./mvnw help:effective-pom -q)",
+      "Bash(./mvnw dependency:tree -q)",
+      "Bash(./mvnw dependency:tree)",
+      "Bash(./mvnw help:effective-pom)"
     ]
   }
 }

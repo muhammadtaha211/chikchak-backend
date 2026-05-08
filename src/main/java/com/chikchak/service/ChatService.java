@@ -2,6 +2,7 @@ package com.chikchak.service;
 
 import com.chikchak.dto.*;
 import com.chikchak.exception.ChikChakException;
+import com.chikchak.exception.RateLimitExceededException;
 import com.chikchak.mapper.BookingMapper;
 import com.chikchak.mapper.UserMapper;
 import com.chikchak.model.*;
@@ -34,9 +35,15 @@ public class ChatService {
     private final BookingMapper bookingMapper;
     private final UserMapper userMapper;
     private final SimpMessagingTemplate messagingTemplate;
+    private final RateLimitService rateLimitService;
 
     public ChatMessageDto sendMessage(SendChatMessageRequest request) {
         User currentUser = authService.getCurrentUserEntity();
+
+        if (!rateLimitService.tryConsume(currentUser.getId())) {
+            log.warn("Rate limit exceeded for user {} on chat send", currentUser.getEmail());
+            throw new RateLimitExceededException("Rate limit exceeded. Please slow down.");
+        }
 
         Chat chat = findOrCreateChat(request.getChatId(), request.getCustomerId(), request.getTechnicianId(), request.getBookingId());
 
