@@ -17,6 +17,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,7 @@ public class BookingService {
     private final NotificationService notificationService;
     private final PricingService pricingService;
     private final ChatService chatService;
+    private final ChatRepository chatRepository;
 
     @Value("${chikchak.service-fee:20}")
     private BigDecimal serviceFee;
@@ -198,7 +201,9 @@ public class BookingService {
         log.info("Booking created (PENDING): {} for technician: {} by customer: {}",
                 bookingNumber, selectedTechnician.getUser().getEmail(), customer.getEmail());
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, customer.getId());
+        return dto;
     }
 
     // UPDATED METHOD: Technician responds to booking
@@ -223,16 +228,22 @@ public class BookingService {
             throw new ChikChakException("This booking is no longer pending");
         }
 
+        BookingDto result;
         switch (request.getResponseType()) {
             case ACCEPT:
-                return acceptBooking(booking, request.getSuggestedTime());
+                result = acceptBooking(booking, request.getSuggestedTime());
+                break;
             case DISCUSS_TIME:
-                return discussBookingTime(booking, request.getSuggestedTime(), request.getMessage());
+                result = discussBookingTime(booking, request.getSuggestedTime(), request.getMessage());
+                break;
             case DECLINE:
-                return declineBooking(booking, request.getMessage());
+                result = declineBooking(booking, request.getMessage());
+                break;
             default:
                 throw new ChikChakException("Invalid response type");
         }
+        populateUnreadCount(result, currentUser.getId());
+        return result;
     }
 
     private BookingDto acceptBooking(Booking booking, LocalDateTime suggestedTime) {
@@ -414,7 +425,7 @@ public class BookingService {
         validateBookingAccess(booking, currentUser);
 
         BookingDto bookingDto = bookingMapper.toDto(booking);
-        bookingDto.setUnreadMessagesCount(0); // Placeholder
+        populateUnreadCount(bookingDto, currentUser.getId());
 
         return bookingDto;
     }
@@ -426,7 +437,9 @@ public class BookingService {
 
         validateBookingAccess(booking, currentUser);
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
     }
 
     public List<BookingDto> getCustomerBookings(Long customerId, Pageable pageable) {
@@ -512,7 +525,9 @@ public class BookingService {
         log.info("Booking {} status changed from {} to {} by {}",
                 booking.getBookingNumber(), oldStatus, newStatus, currentUser.getEmail());
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
     }
 
     private void handleSpecialStatusUpdates(Booking booking, BookingStatus newStatus) {
@@ -590,6 +605,25 @@ public class BookingService {
                 .orElseThrow(() -> new ChikChakException("Booking not found"));
     }
 
+    private void populateUnreadCount(BookingDto dto, Long currentUserId) {
+        if (dto == null || dto.getId() == null) return;
+        Long count = chatRepository.countUnreadMessagesByBookingId(dto.getId(), currentUserId);
+        dto.setUnreadMessagesCount(count != null ? count.intValue() : 0);
+    }
+
+    private void populateUnreadCounts(List<BookingDto> dtos, Long currentUserId) {
+        if (dtos == null || dtos.isEmpty()) return;
+        List<Long> ids = dtos.stream()
+                .map(BookingDto::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        if (ids.isEmpty()) return;
+        Map<Long, Long> counts = chatRepository.countUnreadMessagesByBookingIds(ids, currentUserId).stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        dtos.forEach(dto -> dto.setUnreadMessagesCount(
+                counts.getOrDefault(dto.getId(), 0L).intValue()));
+    }
+
     private void validateBookingAccess(Booking booking, User user) {
         boolean hasAccess = false;
 
@@ -632,9 +666,11 @@ public class BookingService {
                 throw new ChikChakException("Invalid user role for this operation");
         }
 
-        return bookings.stream()
+        List<BookingDto> dtos = bookings.stream()
                 .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
+        populateUnreadCounts(dtos, currentUser.getId());
+        return dtos;
     }
 
     public List<BookingDto> getUnresolvedRefunds() {
@@ -664,9 +700,11 @@ public class BookingService {
 
         List<Booking> pendingBookings = bookingRepository.findPendingBookingsForTechnician(profile.getId());
 
-        return pendingBookings.stream()
+        List<BookingDto> dtos = pendingBookings.stream()
                 .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
+        populateUnreadCounts(dtos, currentUser.getId());
+        return dtos;
     }
 
     public List<BookingDto> getTimeDiscussionBookingsForTechnician() {
@@ -681,9 +719,11 @@ public class BookingService {
 
         List<Booking> bookings = bookingRepository.findByTechnicianIdAndStatus(profile.getId(), BookingStatus.TIME_DISCUSSION);
 
-        return bookings.stream()
+        List<BookingDto> dtos = bookings.stream()
                 .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
+        populateUnreadCounts(dtos, currentUser.getId());
+        return dtos;
     }
 
     public CustomerDashboardDto getCustomerDashboard() {
@@ -701,8 +741,13 @@ public class BookingService {
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
                 .count();
 
+        List<BookingDto> activeBookingDtos = activeBookings.stream()
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
+        populateUnreadCounts(activeBookingDtos, currentUser.getId());
+
         return CustomerDashboardDto.builder()
-                .activeBookings(activeBookings.stream().map(bookingMapper::toDto).collect(Collectors.toList()))
+                .activeBookings(activeBookingDtos)
                 .recentBookings(recentBookings.stream()
                         .limit(10)
                         .map(bookingMapper::toDto)
@@ -751,7 +796,9 @@ public class BookingService {
 
         log.info("Time proposed for booking {}: {}", bookingId, request.getProposedDatetime());
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
     }
 
     public BookingDto acceptProposedTime(Long bookingId, LocalDateTime expectedProposedDatetime) {
@@ -790,7 +837,9 @@ public class BookingService {
 
         log.info("Time accepted for booking {}", bookingId);
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
     }
 
     public void declineAndRefund(Long bookingId) {
@@ -854,7 +903,9 @@ public class BookingService {
 
         log.info("Arrival confirmed for booking {}, payment released", booking.getBookingNumber());
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
     }
 
     public BookingDto dismissRating(Long bookingId) {
@@ -876,7 +927,9 @@ public class BookingService {
 
         log.info("Rating dismissed for booking {}", booking.getBookingNumber());
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
     }
 
     public BookingDto disputeArrival(Long bookingId) {
@@ -908,7 +961,9 @@ public class BookingService {
 
         log.info("Arrival disputed for booking {}", booking.getBookingNumber());
 
-        return bookingMapper.toDto(booking);
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
     }
 
 }

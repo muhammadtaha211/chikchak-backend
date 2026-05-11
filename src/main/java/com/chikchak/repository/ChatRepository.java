@@ -30,4 +30,23 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     // Count unread messages in a chat for a specific user
     @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.chat.id = :chatId AND cm.sender IS NOT NULL AND cm.sender.id != :userId AND cm.isRead = false")
     Long countUnreadMessagesInChat(@Param("chatId") Long chatId, @Param("userId") Long userId);
+
+    // Count unread messages for a user, addressed by booking id (joins chat -> booking)
+    @Query("SELECT COUNT(cm) FROM ChatMessage cm " +
+           "WHERE cm.chat.booking.id = :bookingId " +
+           "AND cm.sender IS NOT NULL " +
+           "AND cm.sender.id != :userId " +
+           "AND cm.isRead = false")
+    Long countUnreadMessagesByBookingId(@Param("bookingId") Long bookingId,
+                                        @Param("userId") Long userId);
+
+    // Batched version: returns [bookingId, count] rows for the given booking ids in a single query
+    @Query("SELECT cm.chat.booking.id, COUNT(cm) FROM ChatMessage cm " +
+           "WHERE cm.chat.booking.id IN :bookingIds " +
+           "AND cm.sender IS NOT NULL " +
+           "AND cm.sender.id != :userId " +
+           "AND cm.isRead = false " +
+           "GROUP BY cm.chat.booking.id")
+    List<Object[]> countUnreadMessagesByBookingIds(@Param("bookingIds") List<Long> bookingIds,
+                                                   @Param("userId") Long userId);
 }
