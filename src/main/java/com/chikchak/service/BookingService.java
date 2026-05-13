@@ -535,11 +535,12 @@ public class BookingService {
             case ARRIVED:
                 booking.setPaymentStatus(PaymentStatus.ESCROW);
                 booking.setArrivalMarkedAt(LocalDateTime.now());
-                chatService.sendBookingUpdateMessage(
-                        booking.getId(),
-                        "ARRIVAL_CONFIRMATION",
-                        "The professional has marked that they arrived. Please confirm their arrival."
-                );
+                // Disabled while app is in no-payment mode: nothing to confirm/dispute. Restore when payments return.
+                // chatService.sendBookingUpdateMessage(
+                //         booking.getId(),
+                //         "ARRIVAL_CONFIRMATION",
+                //         "The professional has marked that they arrived. Please confirm their arrival."
+                // );
                 break;
             case COMPLETED:
                 booking.setCompletedDatetime(LocalDateTime.now());
