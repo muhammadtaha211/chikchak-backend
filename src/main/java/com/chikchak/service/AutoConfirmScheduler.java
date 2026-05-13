@@ -35,11 +35,12 @@ public class AutoConfirmScheduler {
             booking.setStatus(BookingStatus.IN_PROGRESS);
             bookingRepository.save(booking);
 
-            chatService.sendBookingUpdateMessage(
-                    booking.getId(),
-                    "AUTO_CONFIRMED",
-                    "Arrival auto-confirmed after 10 minutes. Payment released."
-            );
+            // Disabled while app is in no-payment mode: message references payment release that no longer happens.
+            // chatService.sendBookingUpdateMessage(
+            //         booking.getId(),
+            //         "AUTO_CONFIRMED",
+            //         "Arrival auto-confirmed after 10 minutes. Payment released."
+            // );
 
             notificationService.notifyPaymentRelease(booking);
 
