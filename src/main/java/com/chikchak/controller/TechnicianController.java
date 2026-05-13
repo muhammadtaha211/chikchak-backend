@@ -66,6 +66,14 @@ public class TechnicianController {
         return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 
+    @GetMapping("/badge-counts")
+    @Operation(summary = "Get badge counts",
+            description = "Get counts for navbar and tab badges (new requests, confirmed bookings, time-discussion bookings, and the schedule tab total)")
+    public ResponseEntity<ApiResponse<TechnicianBadgeCountsDto>> getBadgeCounts() {
+        TechnicianBadgeCountsDto counts = bookingService.getBadgeCounts();
+        return ResponseEntity.ok(ApiResponse.success(counts));
+    }
+
     @GetMapping("/profile")
     @Operation(summary = "Get technician profile", description = "Get current technician's profile details")
     public ResponseEntity<ApiResponse<TechnicianProfileDto>> getProfile() {
