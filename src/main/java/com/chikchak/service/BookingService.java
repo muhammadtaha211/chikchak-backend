@@ -726,6 +726,29 @@ public class BookingService {
         return dtos;
     }
 
+    @Transactional(readOnly = true)
+    public TechnicianBadgeCountsDto getBadgeCounts() {
+        User currentUser = authService.getCurrentUserEntity();
+
+        if (currentUser.getRole() != UserRole.TECHNICIAN) {
+            throw new ChikChakException("Only technicians can view badge counts");
+        }
+
+        TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ChikChakException("Technician profile not found"));
+
+        Long newRequests = bookingRepository.countNewRequestsForTechnician(profile.getId());
+        Long confirmed = bookingRepository.countConfirmedBookingsForTechnician(profile.getId());
+        Long timeDiscussion = bookingRepository.countTimeDiscussionForTechnician(profile.getId());
+
+        return TechnicianBadgeCountsDto.builder()
+                .newRequestsCount(newRequests.intValue())
+                .confirmedBookingsCount(confirmed.intValue())
+                .timeDiscussionCount(timeDiscussion.intValue())
+                .scheduleTotalCount((int) (confirmed + timeDiscussion))
+                .build();
+    }
+
     public CustomerDashboardDto getCustomerDashboard() {
         User currentUser = authService.getCurrentUserEntity();
 

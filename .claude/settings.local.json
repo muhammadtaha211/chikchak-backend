@@ -54,7 +54,8 @@
       "Bash(./mvnw help:effective-pom -q)",
       "Bash(./mvnw dependency:tree -q)",
       "Bash(./mvnw dependency:tree)",
-      "Bash(./mvnw help:effective-pom)"
+      "Bash(./mvnw help:effective-pom)",
+      "Bash(git diff *)"
     ]
   }
 }
