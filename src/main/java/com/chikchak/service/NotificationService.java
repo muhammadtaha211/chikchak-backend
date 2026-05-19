@@ -34,7 +34,7 @@ public class NotificationService {
         String message = String.format(
                 "New booking request #%s - %s at %s on %s",
                 booking.getBookingNumber(),
-                booking.getServiceCategory().getName(),
+                booking.getServiceType().name(),
                 booking.getServiceAddress(),
                 booking.getPreferredDatetime().format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))
         );

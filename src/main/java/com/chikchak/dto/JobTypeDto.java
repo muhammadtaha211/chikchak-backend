@@ -1,5 +1,6 @@
 package com.chikchak.dto;
 
+import com.chikchak.model.ServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +16,5 @@ public class JobTypeDto {
     private String name = "";
     @Builder.Default
     private String nameHe = "";
-    private Long serviceCategoryId;
+    private ServiceType serviceType;
 }

@@ -4,7 +4,6 @@ import com.chikchak.dto.*;
 import com.chikchak.exception.ChikChakException;
 import com.chikchak.mapper.UserMapper;
 import com.chikchak.model.*;
-import com.chikchak.repository.ServiceCategoryRepository;
 import com.chikchak.repository.TechnicianProfileRepository;
 import com.chikchak.repository.UserRepository;
 import com.chikchak.security.CustomUserDetails;
@@ -30,7 +29,6 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final TechnicianProfileRepository technicianProfileRepository;
-    private final ServiceCategoryRepository serviceCategoryRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
@@ -123,16 +121,14 @@ public class AuthService {
     }
 
     private TechnicianProfile createTechnicianProfile(User user, RegisterRequest registerRequest) {
-        // Look up the service category
-        ServiceCategory serviceCategory = null;
-        if (registerRequest.getServiceType() != null) {
-            serviceCategory = serviceCategoryRepository.findByServiceType(registerRequest.getServiceType())
-                .orElseThrow(() -> new ChikChakException("Service category not found: " + registerRequest.getServiceType()));
+        ServiceType serviceType = registerRequest.getServiceType();
+        if (serviceType == null) {
+            throw new ChikChakException("Service type is required for technicians");
         }
 
-        // Set standardized visit fee based on service category
-        boolean isMovers = serviceCategory != null && serviceCategory.getServiceType() == ServiceType.MOVERS;
-        BigDecimal diagnosisFee = isMovers ? DataInitializer.MOVERS_DIAGNOSIS_FEE : DataInitializer.STANDARD_DIAGNOSIS_FEE;
+        BigDecimal diagnosisFee = serviceType == ServiceType.MOVERS
+            ? DataInitializer.MOVERS_DIAGNOSIS_FEE
+            : DataInitializer.STANDARD_DIAGNOSIS_FEE;
 
         if (registerRequest.getYearsExperience() == null) {
             throw new ChikChakException("Years of experience is required for technicians");
@@ -145,7 +141,7 @@ public class AuthService {
             .yearsExperience(registerRequest.getYearsExperience())
             .isVerified(false) // Requires admin approval
             .isAvailable(true)
-            .serviceCategory(serviceCategory)
+            .serviceType(serviceType)
             .build();
 
         return technicianProfileRepository.save(profile);

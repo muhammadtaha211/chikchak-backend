@@ -7,6 +7,7 @@ import com.chikchak.exception.ChikChakException;
 import com.chikchak.mapper.JobTypeMapper;
 import com.chikchak.mapper.TechnicianJobPricingMapper;
 import com.chikchak.model.JobType;
+import com.chikchak.model.ServiceType;
 import com.chikchak.model.TechnicianJobPricing;
 import com.chikchak.model.TechnicianProfile;
 import com.chikchak.model.User;
@@ -35,8 +36,8 @@ public class JobPricingService {
     private final TechnicianJobPricingMapper technicianJobPricingMapper;
 
     @Transactional(readOnly = true)
-    public List<JobTypeDto> getJobTypesByCategory(Long serviceCategoryId) {
-        List<JobType> jobTypes = jobTypeRepository.findByServiceCategoryIdOrderByName(serviceCategoryId);
+    public List<JobTypeDto> getJobTypesByServiceType(ServiceType serviceType) {
+        List<JobType> jobTypes = jobTypeRepository.findByServiceTypeOrderByName(serviceType);
         return jobTypeMapper.toDtoList(jobTypes);
     }
 

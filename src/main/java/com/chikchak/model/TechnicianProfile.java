@@ -59,10 +59,9 @@ public class TechnicianProfile extends BaseEntity {
     @Builder.Default
     private Integer serviceRadius = 25;
 
-    // Service category offered
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "service_category_id")
-    private ServiceCategory serviceCategory;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "service_type", nullable = false, length = 50)
+    private ServiceType serviceType;
 
     @OneToMany(mappedBy = "technician", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Booking> bookings;

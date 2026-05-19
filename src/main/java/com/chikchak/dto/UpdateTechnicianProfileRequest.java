@@ -1,5 +1,6 @@
 package com.chikchak.dto;
 
+import com.chikchak.model.ServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,5 +19,5 @@ public class UpdateTechnicianProfileRequest {
     private Boolean isAvailable;
     private Integer serviceRadius;
     private String workingHours;
-    private Long serviceId;
+    private ServiceType serviceType;
 }

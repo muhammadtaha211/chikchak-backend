@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 public class TechnicianService {
 
     private final TechnicianProfileRepository technicianProfileRepository;
-    private final ServiceCategoryRepository serviceCategoryRepository;
     private final BookingRepository bookingRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final AuthService authService;
@@ -166,11 +165,8 @@ public class TechnicianService {
             profile.setWorkingHours(request.getWorkingHours());
         }
 
-        // Update service category
-        if (request.getServiceId() != null) {
-            ServiceCategory serviceCategory = serviceCategoryRepository.findById(request.getServiceId())
-                    .orElseThrow(() -> new ChikChakException("Service category not found: " + request.getServiceId()));
-            profile.setServiceCategory(serviceCategory);
+        if (request.getServiceType() != null) {
+            profile.setServiceType(request.getServiceType());
         }
 
         profile = technicianProfileRepository.save(profile);

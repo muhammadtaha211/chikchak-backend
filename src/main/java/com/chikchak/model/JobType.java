@@ -20,7 +20,7 @@ public class JobType extends BaseEntity {
     @Column(name = "name_he")
     private String nameHe;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_category_id", nullable = false)
-    private ServiceCategory serviceCategory;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "service_type", nullable = false, length = 50)
+    private ServiceType serviceType;
 }

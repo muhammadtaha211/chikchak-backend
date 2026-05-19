@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
-    private final ServiceCategoryRepository serviceCategoryRepository;
     private final TechnicianProfileRepository technicianProfileRepository;
     private final UserRepository userRepository;
     private final BookingStatusHistoryRepository statusHistoryRepository;
@@ -100,9 +99,6 @@ public class BookingService {
             throw new ChikChakException("You already have an active booking. Please complete or cancel it before creating a new one.");
         }
 
-        ServiceCategory serviceCategory = serviceCategoryRepository.findByServiceType(request.getServiceType())
-                .orElseThrow(() -> new ChikChakException("Service category not found for type: " + request.getServiceType()));
-
         // Get the selected technician
         TechnicianProfile selectedTechnician = technicianProfileRepository.findById(request.getSelectedTechnicianId())
                 .orElseThrow(() -> new ChikChakException("Selected technician not found"));
@@ -135,7 +131,7 @@ public class BookingService {
                 .bookingNumber(bookingNumber)
                 .customer(customer)
                 .technician(selectedTechnician)
-                .serviceCategory(serviceCategory)
+                .serviceType(request.getServiceType())
                 .problemDescription(request.getProblemDescription())
                 .status(BookingStatus.PENDING) // Awaiting technician confirmation
                 .urgency(request.getUrgency())
@@ -190,7 +186,7 @@ public class BookingService {
                 booking.getId(),
                 "BOOKING_CREATED",
                 String.format("Booking request for %s on %s",
-                        serviceCategory.getName(),
+                        request.getServiceType().name(),
                         formatTimeRange(booking.getPreferredDatetime())
                 )
         );

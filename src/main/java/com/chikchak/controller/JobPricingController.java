@@ -4,6 +4,7 @@ import com.chikchak.dto.ApiResponse;
 import com.chikchak.dto.JobTypeDto;
 import com.chikchak.dto.SaveTechnicianJobPricingRequest;
 import com.chikchak.dto.TechnicianJobPricingDto;
+import com.chikchak.model.ServiceType;
 import com.chikchak.service.JobPricingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,11 +23,11 @@ public class JobPricingController {
 
     private final JobPricingService jobPricingService;
 
-    @GetMapping("/api/public/job-types/{serviceCategoryId}")
-    @Operation(summary = "Get job types by category", description = "Returns all predefined job types for a service category")
-    public ResponseEntity<ApiResponse<List<JobTypeDto>>> getJobTypesByCategory(
-            @PathVariable Long serviceCategoryId) {
-        List<JobTypeDto> jobTypes = jobPricingService.getJobTypesByCategory(serviceCategoryId);
+    @GetMapping("/api/public/job-types/{serviceType}")
+    @Operation(summary = "Get job types by service type", description = "Returns all predefined job types for a service type")
+    public ResponseEntity<ApiResponse<List<JobTypeDto>>> getJobTypesByServiceType(
+            @PathVariable ServiceType serviceType) {
+        List<JobTypeDto> jobTypes = jobPricingService.getJobTypesByServiceType(serviceType);
         return ResponseEntity.ok(ApiResponse.success(jobTypes));
     }
 

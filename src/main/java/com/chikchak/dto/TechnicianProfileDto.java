@@ -1,5 +1,6 @@
 package com.chikchak.dto;
 
+import com.chikchak.model.ServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,7 +45,7 @@ public class TechnicianProfileDto {
     @Builder.Default
     private String workingHours = "";
 
-    private ServiceCategoryDto serviceCategory;
+    private ServiceType serviceType;
 
     @Builder.Default
     private Double distanceFromCustomer = 0.0;
