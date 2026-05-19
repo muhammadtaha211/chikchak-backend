@@ -2,12 +2,10 @@
 package com.chikchak.config;
 
 import com.chikchak.model.JobType;
-import com.chikchak.model.ServiceCategory;
 import com.chikchak.model.ServiceType;
 import com.chikchak.model.User;
 import com.chikchak.model.UserRole;
 import com.chikchak.repository.JobTypeRepository;
-import com.chikchak.repository.ServiceCategoryRepository;
 import com.chikchak.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,17 +25,8 @@ public class DataInitializer {
     public static final BigDecimal STANDARD_DIAGNOSIS_FEE = new BigDecimal("80");
     public static final BigDecimal MOVERS_DIAGNOSIS_FEE = BigDecimal.ZERO;
 
-    /*
-     * SQL to update existing technician profiles to the standardized visit fee:
-     *
-     * UPDATE technician_profiles SET base_diagnosis_fee = 80;
-     * UPDATE technician_profiles SET base_diagnosis_fee = 0
-     *   WHERE service_category_id IN (SELECT id FROM service_categories WHERE service_type = 'MOVERS');
-     */
-
     @Bean
     CommandLineRunner initData(UserRepository userRepository,
-                               ServiceCategoryRepository serviceCategoryRepository,
                                JobTypeRepository jobTypeRepository,
                                PasswordEncoder passwordEncoder) {
         return args -> {
@@ -54,98 +43,16 @@ public class DataInitializer {
                 log.info("Default admin user created");
             }
 
-            // Create default service categories
-            if (serviceCategoryRepository.count() == 0) {
-                createDefaultServices(serviceCategoryRepository);
-                log.info("Default service categories created");
-            } else {
-                patchExistingServiceTypes(serviceCategoryRepository);
-            }
-
             // Seed default job types
             if (jobTypeRepository.count() == 0) {
-                seedJobTypes(serviceCategoryRepository, jobTypeRepository);
+                seedJobTypes(jobTypeRepository);
                 log.info("Default job types seeded");
             }
         };
     }
 
-    private void createDefaultServices(ServiceCategoryRepository repository) {
-        ServiceCategory[] services = {
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.PLUMBING)
-                        .name("Plumbing")
-                        .nameHe("שרברבות")
-                        .description("Plumbing services including pipe repair, installation, and maintenance")
-                        .iconUrl("/icons/plumbing.svg")
-                        .isActive(true)
-                        .build(),
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.ELECTRICAL)
-                        .name("Electrical")
-                        .nameHe("חשמל")
-                        .description("Electrical services including wiring, installation, and repair")
-                        .iconUrl("/icons/electrical.svg")
-                        .isActive(true)
-                        .build(),
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.AC_REPAIR)
-                        .name("AC Repair")
-                        .nameHe("תיקון מזגנים")
-                        .description("Air conditioning repair, maintenance, and installation")
-                        .iconUrl("/icons/ac-repair.svg")
-                        .isActive(true)
-                        .build(),
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.MOVERS)
-                        .name("Movers")
-                        .nameHe("הובלות")
-                        .description("Moving and relocation services")
-                        .iconUrl("/icons/movers.svg")
-                        .isActive(true)
-                        .build(),
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.CLEANING)
-                        .name("Cleaning")
-                        .nameHe("ניקיון")
-                        .description("Professional cleaning services for homes and offices")
-                        .iconUrl("/icons/cleaning.svg")
-                        .isActive(true)
-                        .build(),
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.CARPENTRY)
-                        .name("Carpentry")
-                        .nameHe("נגרות")
-                        .description("Carpentry and woodworking services")
-                        .iconUrl("/icons/carpentry.svg")
-                        .isActive(true)
-                        .build(),
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.PAINTING)
-                        .name("Painting")
-                        .nameHe("צביעה")
-                        .description("Interior and exterior painting services")
-                        .iconUrl("/icons/painting.svg")
-                        .isActive(true)
-                        .build(),
-                ServiceCategory.builder()
-                        .serviceType(ServiceType.GARDENING)
-                        .name("Gardening")
-                        .nameHe("גינון")
-                        .description("Gardening and landscaping services")
-                        .iconUrl("/icons/gardening.svg")
-                        .isActive(true)
-                        .build()
-        };
-
-        for (ServiceCategory service : services) {
-            repository.save(service);
-        }
-    }
-
-    private void seedJobTypes(ServiceCategoryRepository serviceCategoryRepository,
-                              JobTypeRepository jobTypeRepository) {
-        java.util.Map<ServiceType, String[]> jobTypesByCategory = java.util.Map.of(
+    private void seedJobTypes(JobTypeRepository jobTypeRepository) {
+        java.util.Map<ServiceType, String[]> jobTypesByServiceType = java.util.Map.of(
                 ServiceType.PLUMBING, new String[]{
                         "Simple Blockage", "Deep Blockage", "Pipe Replacement",
                         "Faucet Installation", "Toilet Repair", "Water Heater Repair"
@@ -164,47 +71,14 @@ public class DataInitializer {
                 }
         );
 
-        for (var entry : jobTypesByCategory.entrySet()) {
-            ServiceCategory category = serviceCategoryRepository.findByServiceType(entry.getKey())
-                    .orElse(null);
-            if (category == null) {
-                log.warn("ServiceCategory not found for type: {}", entry.getKey());
-                continue;
-            }
+        for (var entry : jobTypesByServiceType.entrySet()) {
             for (String jobName : entry.getValue()) {
                 JobType jobType = JobType.builder()
                         .name(jobName)
                         .nameHe(jobName) // Placeholder — will be replaced with Hebrew
-                        .serviceCategory(category)
+                        .serviceType(entry.getKey())
                         .build();
                 jobTypeRepository.save(jobType);
-            }
-        }
-    }
-
-    private void patchExistingServiceTypes(ServiceCategoryRepository repository) {
-        // Patch existing rows that don't have serviceType set yet
-        java.util.Map<String, ServiceType> nameToType = java.util.Map.of(
-                "Plumbing", ServiceType.PLUMBING,
-                "Electrical", ServiceType.ELECTRICAL,
-                "AC Repair", ServiceType.AC_REPAIR,
-                "Movers", ServiceType.MOVERS,
-                "Cleaning", ServiceType.CLEANING,
-                "Carpentry", ServiceType.CARPENTRY,
-                "Painting", ServiceType.PAINTING,
-                "Gardening", ServiceType.GARDENING
-        );
-
-        for (ServiceCategory category : repository.findAll()) {
-            if (category.getServiceType() == null) {
-                ServiceType type = nameToType.get(category.getName());
-                if (type != null) {
-                    category.setServiceType(type);
-                    repository.save(category);
-                    log.info("Patched serviceType for: {} -> {}", category.getName(), type);
-                } else {
-                    log.warn("No matching ServiceType for category: {}", category.getName());
-                }
             }
         }
     }

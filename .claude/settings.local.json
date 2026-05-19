@@ -55,7 +55,10 @@
       "Bash(./mvnw dependency:tree -q)",
       "Bash(./mvnw dependency:tree)",
       "Bash(./mvnw help:effective-pom)",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(git rm *)",
+      "Bash(findstr /R /C:\"BUILD\" /C:\"ERROR\" /C:\"error\")",
+      "Bash(./mvnw.cmd clean *)"
     ]
   }
 }

@@ -4,6 +4,7 @@ import com.chikchak.model.BookingStatus;
 import com.chikchak.model.BookingUrgency;
 import com.chikchak.model.PaymentStatus;
 import com.chikchak.model.RefundStatus;
+import com.chikchak.model.ServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +27,7 @@ public class BookingDto {
 
     private UserDto customer;
     private TechnicianProfileDto technician;
-    private ServiceCategoryDto serviceCategory;
+    private ServiceType serviceType;
 
     @Builder.Default
     private String problemDescription = "";

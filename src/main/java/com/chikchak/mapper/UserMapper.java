@@ -3,10 +3,8 @@ package com.chikchak.mapper;
 
 import com.chikchak.dto.UserDto;
 import com.chikchak.dto.TechnicianProfileDto;
-import com.chikchak.dto.ServiceCategoryDto;
 import com.chikchak.model.User;
 import com.chikchak.model.TechnicianProfile;
-import com.chikchak.model.ServiceCategory;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -22,9 +20,4 @@ public interface UserMapper {
     TechnicianProfileDto toDto(TechnicianProfile technicianProfile);
 
     TechnicianProfile toEntity(TechnicianProfileDto technicianProfileDto);
-
-    ServiceCategoryDto toDto(ServiceCategory serviceCategory);
-
-    @Mapping(target = "serviceType", ignore = true)
-    ServiceCategory toEntity(ServiceCategoryDto serviceCategoryDto);
 }
