@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
+// Dormant: platform pricing now lives on JobType.minPrice/maxPrice.
+@Deprecated
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

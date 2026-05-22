@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,5 +18,9 @@ public class JobTypeDto {
     private String name = "";
     @Builder.Default
     private String nameHe = "";
+    @Builder.Default
+    private String nameAr = "";
     private ServiceType serviceType;
+    private BigDecimal minPrice;
+    private BigDecimal maxPrice;
 }

@@ -41,6 +41,8 @@ public class JobPricingService {
         return jobTypeMapper.toDtoList(jobTypes);
     }
 
+    // Dormant: per-technician pricing replaced by platform-set JobType.minPrice/maxPrice.
+    @Deprecated
     @Transactional(readOnly = true)
     public List<TechnicianJobPricingDto> getOfferedTechnicianPricing(Long technicianId) {
         technicianProfileRepository.findById(technicianId)
@@ -51,6 +53,8 @@ public class JobPricingService {
         return technicianJobPricingMapper.toDtoList(pricings);
     }
 
+    // Dormant: per-technician pricing replaced by platform-set JobType.minPrice/maxPrice.
+    @Deprecated
     @Transactional(readOnly = true)
     public List<TechnicianJobPricingDto> getTechnicianPricing(Long technicianId) {
         technicianProfileRepository.findById(technicianId)
@@ -61,6 +65,8 @@ public class JobPricingService {
         return technicianJobPricingMapper.toDtoList(pricings);
     }
 
+    // Dormant: per-technician pricing replaced by platform-set JobType.minPrice/maxPrice.
+    @Deprecated
     @Transactional(readOnly = true)
     public List<TechnicianJobPricingDto> getMyPricing() {
         User currentUser = authService.getCurrentUserEntity();
@@ -69,6 +75,8 @@ public class JobPricingService {
         return getTechnicianPricing(technician.getId());
     }
 
+    // Dormant: per-technician pricing replaced by platform-set JobType.minPrice/maxPrice.
+    @Deprecated
     public List<TechnicianJobPricingDto> saveTechnicianPricing(SaveTechnicianJobPricingRequest request) {
         User currentUser = authService.getCurrentUserEntity();
         TechnicianProfile technician = technicianProfileRepository.findByUserId(currentUser.getId())

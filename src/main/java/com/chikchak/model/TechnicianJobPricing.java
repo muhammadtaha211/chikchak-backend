@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+// Dormant: platform pricing now lives on JobType.minPrice/maxPrice. Kept for potential re-introduction of per-technician pricing later.
+@Deprecated
 @Entity
 @Table(name = "technician_job_pricing",
         uniqueConstraints = @UniqueConstraint(columnNames = {"technician_id", "job_type_id"}))

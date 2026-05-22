@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+// Dormant: platform pricing now lives on JobType.minPrice/maxPrice.
+@Deprecated
 @Repository
 public interface TechnicianJobPricingRepository extends JpaRepository<TechnicianJobPricing, Long> {
     List<TechnicianJobPricing> findByTechnicianIdOrderByJobTypeName(Long technicianId);
