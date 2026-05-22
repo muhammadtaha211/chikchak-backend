@@ -8,6 +8,8 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
+// Dormant: platform pricing now lives on JobType.minPrice/maxPrice.
+@Deprecated
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TechnicianJobPricingMapper {
 

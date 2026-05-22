@@ -31,6 +31,8 @@ public class JobPricingController {
         return ResponseEntity.ok(ApiResponse.success(jobTypes));
     }
 
+    // Dormant: per-technician pricing replaced by platform-set JobType.minPrice/maxPrice.
+    @Deprecated
     @GetMapping("/api/public/technician-pricing/{technicianId}")
     @Operation(summary = "Get technician pricing", description = "Returns a technician's offered jobs with price ranges")
     public ResponseEntity<ApiResponse<List<TechnicianJobPricingDto>>> getTechnicianPricing(
@@ -39,6 +41,8 @@ public class JobPricingController {
         return ResponseEntity.ok(ApiResponse.success(pricing));
     }
 
+    // Dormant: per-technician pricing replaced by platform-set JobType.minPrice/maxPrice.
+    @Deprecated
     @GetMapping("/api/technician/job-pricing")
     @Operation(summary = "Get my job pricing", description = "Returns all the technician's jobs with price ranges, including non-offered")
     public ResponseEntity<ApiResponse<List<TechnicianJobPricingDto>>> getMyPricing() {
@@ -46,6 +50,8 @@ public class JobPricingController {
         return ResponseEntity.ok(ApiResponse.success(pricing));
     }
 
+    // Dormant: per-technician pricing replaced by platform-set JobType.minPrice/maxPrice.
+    @Deprecated
     @PutMapping("/api/technician/job-pricing")
     @Operation(summary = "Save technician job pricing", description = "Save or update the technician's offered jobs with price ranges")
     public ResponseEntity<ApiResponse<List<TechnicianJobPricingDto>>> saveTechnicianPricing(
