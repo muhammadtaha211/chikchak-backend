@@ -21,7 +21,6 @@ import java.util.List;
 @RequestMapping("/api/customer")
 @RequiredArgsConstructor
 @Tag(name = "Customer", description = "Customer-specific APIs")
-@CrossOrigin(origins = {"http://localhost:3000", "https://your-frontend-domain.com"})
 public class CustomerController {
 
     private final BookingService bookingService;

@@ -18,7 +18,6 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Job Pricing", description = "Job types and technician pricing APIs")
-@CrossOrigin(origins = {"http://localhost:3000", "https://your-frontend-domain.com"})
 public class JobPricingController {
 
     private final JobPricingService jobPricingService;

@@ -21,7 +21,6 @@ import java.util.List;
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
 @Tag(name = "Chat", description = "Chat and messaging APIs")
-@CrossOrigin(origins = {"http://localhost:3000", "https://your-frontend-domain.com"})
 public class ChatController {
 
     private final ChatService chatService;
