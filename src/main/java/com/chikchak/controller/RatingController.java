@@ -17,7 +17,6 @@ import java.util.List;
 @RequestMapping("/api/ratings")
 @RequiredArgsConstructor
 @Tag(name = "Ratings", description = "Rating management APIs")
-@CrossOrigin(origins = {"http://localhost:3000", "https://your-frontend-domain.com"})
 public class RatingController {
 
     private final RatingService ratingService;
