@@ -30,8 +30,7 @@ public class TechnicianProfileDto {
     @Builder.Default
     private Boolean isAvailable = false;
 
-    @Builder.Default
-    private Double averageRating = 5.0;
+    private Double averageRating;
 
     @Builder.Default
     private Integer totalRatings = 0;
