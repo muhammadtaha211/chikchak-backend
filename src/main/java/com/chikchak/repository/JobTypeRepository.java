@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface JobTypeRepository extends JpaRepository<JobType, Long> {
-    List<JobType> findByServiceTypeOrderByName(ServiceType serviceType);
+    List<JobType> findByServiceTypeOrderByMinPriceAscMaxPriceAsc(ServiceType serviceType);
 }

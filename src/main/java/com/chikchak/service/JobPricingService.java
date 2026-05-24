@@ -37,7 +37,7 @@ public class JobPricingService {
 
     @Transactional(readOnly = true)
     public List<JobTypeDto> getJobTypesByServiceType(ServiceType serviceType) {
-        List<JobType> jobTypes = jobTypeRepository.findByServiceTypeOrderByName(serviceType);
+        List<JobType> jobTypes = jobTypeRepository.findByServiceTypeOrderByMinPriceAscMaxPriceAsc(serviceType);
         return jobTypeMapper.toDtoList(jobTypes);
     }
 
