@@ -140,7 +140,7 @@ public class AuthService {
             .bio(registerRequest.getBio())
             .yearsExperience(registerRequest.getYearsExperience())
             .isVerified(false) // Requires admin approval
-            .isAvailable(true)
+            .isAvailable(false)
             .serviceType(serviceType)
             .build();
 

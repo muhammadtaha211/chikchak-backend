@@ -91,7 +91,7 @@ public class RatingService {
         if (avg != null) {
             technician.setAverageRating(avg.setScale(2, RoundingMode.HALF_UP));
         } else {
-            technician.setAverageRating(new BigDecimal("5.00"));
+            technician.setAverageRating(null);
         }
         technicianProfileRepository.save(technician);
         log.info("Recalculated average rating for technician {}: {} ({} ratings)", technician.getId(), technician.getAverageRating(), technician.getTotalRatings());
