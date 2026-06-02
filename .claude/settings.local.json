@@ -58,7 +58,8 @@
       "Bash(git diff *)",
       "Bash(git rm *)",
       "Bash(findstr /R /C:\"BUILD\" /C:\"ERROR\" /C:\"error\")",
-      "Bash(./mvnw.cmd clean *)"
+      "Bash(./mvnw.cmd clean *)",
+      "Bash(mvn -q compile)"
     ]
   }
 }
