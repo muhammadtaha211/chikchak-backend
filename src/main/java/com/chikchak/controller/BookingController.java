@@ -136,4 +136,13 @@ public class BookingController {
         BookingDto booking = bookingService.disputeArrival(id);
         return ResponseEntity.ok(ApiResponse.success("Dispute submitted for admin review", booking));
     }
+
+    @PostMapping("/{id}/photos")
+    @Operation(summary = "Add booking photos", description = "Append one or more image URLs to a booking's photos")
+    public ResponseEntity<ApiResponse<BookingDto>> addPhotos(
+            @PathVariable Long id,
+            @Valid @RequestBody AddPhotoRequest request) {
+        BookingDto booking = bookingService.addPhotos(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Photo(s) added", booking));
+    }
 }

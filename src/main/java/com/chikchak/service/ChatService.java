@@ -38,6 +38,12 @@ public class ChatService {
     private final RateLimitService rateLimitService;
 
     public ChatMessageDto sendMessage(SendChatMessageRequest request) {
+        boolean hasMessage = request.getMessage() != null && !request.getMessage().trim().isEmpty();
+        boolean hasAttachment = request.getAttachmentUrl() != null && !request.getAttachmentUrl().trim().isEmpty();
+        if (!hasMessage && !hasAttachment) {
+            throw new ChikChakException("Message or attachment is required");
+        }
+
         User currentUser = authService.getCurrentUserEntity();
 
         if (!rateLimitService.tryConsume(currentUser.getId())) {
