@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -946,6 +947,28 @@ public class BookingService {
         booking = bookingRepository.save(booking);
 
         log.info("Rating dismissed for booking {}", booking.getBookingNumber());
+
+        BookingDto dto = bookingMapper.toDto(booking);
+        populateUnreadCount(dto, currentUser.getId());
+        return dto;
+    }
+
+    public BookingDto addPhotos(Long bookingId, AddPhotoRequest request) {
+        User currentUser = authService.getCurrentUserEntity();
+        Booking booking = findBookingById(bookingId);
+        validateBookingAccess(booking, currentUser); // allows customer, assigned technician, admin
+
+        List<String> photos = new ArrayList<>(bookingMapper.stringToList(booking.getPhotos()));
+        for (String url : request.getPhotoUrls()) {
+            if (url != null && !url.trim().isEmpty()) {
+                photos.add(url.trim());
+            }
+        }
+
+        booking.setPhotos(bookingMapper.listToString(photos));
+        booking = bookingRepository.save(booking);
+
+        log.info("Added {} photo(s) to booking {}", request.getPhotoUrls().size(), booking.getBookingNumber());
 
         BookingDto dto = bookingMapper.toDto(booking);
         populateUnreadCount(dto, currentUser.getId());
