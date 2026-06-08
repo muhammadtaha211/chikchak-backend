@@ -193,6 +193,16 @@ public class AuthService {
         return userMapper.toDto(user);
     }
 
+    public UserDto updateProfileImage(UpdateProfileImageRequest request) {
+        User user = getCurrentUserEntity();
+
+        user.setProfileImageUrl(request.getProfileImageUrl());
+        user = userRepository.save(user);
+        log.info("Profile image updated for user: {}", user.getEmail());
+
+        return userMapper.toDto(user);
+    }
+
     public void changePassword(String currentPassword, String newPassword) {
         User user = getCurrentUserEntity();
         

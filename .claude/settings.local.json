@@ -59,7 +59,8 @@
       "Bash(git rm *)",
       "Bash(findstr /R /C:\"BUILD\" /C:\"ERROR\" /C:\"error\")",
       "Bash(./mvnw.cmd clean *)",
-      "Bash(mvn -q compile)"
+      "Bash(mvn -q compile)",
+      "PowerShell(.\\\\mvnw.cmd compile -q -o 2>&1 | Select-Object -Last 40; \"EXIT=$LASTEXITCODE\")"
     ]
   }
 }
