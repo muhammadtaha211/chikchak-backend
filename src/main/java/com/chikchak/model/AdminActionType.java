@@ -1,0 +1,10 @@
+package com.chikchak.model;
+
+public enum AdminActionType {
+    TECHNICIAN_APPROVED,
+    TECHNICIAN_REJECTED,
+    USER_SUSPENDED,
+    USER_REACTIVATED,
+    BOOKING_CANCELLED,
+    BOOKING_STATUS_OVERRIDE
+}

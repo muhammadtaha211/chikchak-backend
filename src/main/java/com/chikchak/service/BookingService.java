@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -42,6 +43,8 @@ public class BookingService {
 
     @Value("${chikchak.service-fee:20}")
     private BigDecimal serviceFee;
+
+    private static final Locale HEBREW = Locale.forLanguageTag("he");
 
     // ⭐ NEW METHOD: Calculate Booking Price (before creating booking)
     public PricingCalculationDto calculateBookingPrice(PriceCalculationRequest request) {
@@ -186,8 +189,8 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "BOOKING_CREATED",
-                String.format("Booking request for %s on %s",
-                        request.getServiceType().name(),
+                String.format("בקשת הזמנה חדשה ל%s — %s",
+                        request.getServiceType().getHebrewName(),
                         formatTimeRange(booking.getPreferredDatetime())
                 )
         );
@@ -261,7 +264,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "BOOKING_ACCEPTED",
-                "Professional accepted! Scheduled for " + formatTimeRange(booking.getScheduledDatetime())
+                "בעל המקצוע אישר את ההזמנה! נקבע ל־" + formatTimeRange(booking.getScheduledDatetime())
         );
 
         // Notify customer
@@ -284,7 +287,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "TIME_PROPOSED",
-                "Technician proposed a new time: " + formatTimeRange(suggestedTime)
+                "בעל המקצוע הציע מועד חדש: " + formatTimeRange(suggestedTime)
         );
 
         // Notify customer
@@ -310,8 +313,8 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "BOOKING_DECLINED",
-                "Technician declined this booking. " +
-                        (reason != null ? "Reason: " + reason : "")
+                "בעל המקצוע דחה את ההזמנה." +
+                        (reason != null ? " סיבה: " + reason : "")
         );
 
         // Notify customer to choose refund method
@@ -396,13 +399,13 @@ public class BookingService {
         // Send confirmation
         String refundDescription;
         if (request.getRefundMethod() == RefundMethod.CREDITS) {
-            refundDescription = String.format("Refund of ₪%.2f processed via account credits", refundAmount);
+            refundDescription = String.format("החזר בסך ₪%.2f בוצע לקרדיט בחשבון", refundAmount);
         } else if (creditsApplied.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal cardPortion = refundAmount.subtract(creditsApplied);
-            refundDescription = String.format("Refund processed: ₪%.2f to account credits + ₪%.2f to original payment method",
+            refundDescription = String.format("החזר בוצע: ₪%.2f לקרדיט בחשבון + ₪%.2f לאמצעי התשלום המקורי",
                     creditsApplied, cardPortion);
         } else {
-            refundDescription = String.format("Refund of ₪%.2f processed via original payment method", refundAmount);
+            refundDescription = String.format("החזר בסך ₪%.2f בוצע לאמצעי התשלום המקורי", refundAmount);
         }
 
         chatService.sendBookingUpdateMessage(
@@ -527,6 +530,32 @@ public class BookingService {
         return dto;
     }
 
+    // Admin escape hatch for stuck bookings: same side-effects as updateBookingStatus
+    // (status history, completion/cancellation triggers, notifications) but without the
+    // role/permission and state-transition restrictions.
+    public BookingDto adminUpdateBookingStatus(Long bookingId, BookingStatus newStatus, String reason) {
+        Booking booking = findBookingById(bookingId);
+        BookingStatus oldStatus = booking.getStatus();
+
+        if (oldStatus == newStatus) {
+            throw new ChikChakException("Booking is already in status " + newStatus);
+        }
+
+        booking.setStatus(newStatus);
+        handleSpecialStatusUpdates(booking, newStatus);
+        booking = bookingRepository.save(booking);
+
+        createStatusHistory(booking, oldStatus, newStatus,
+                reason != null && !reason.trim().isEmpty() ? "Admin override: " + reason : "Admin override");
+
+        notificationService.notifyBookingStatusChanged(booking, oldStatus, newStatus);
+
+        log.info("ADMIN override: booking {} status changed from {} to {}",
+                booking.getBookingNumber(), oldStatus, newStatus);
+
+        return bookingMapper.toDto(booking);
+    }
+
     private void handleSpecialStatusUpdates(Booking booking, BookingStatus newStatus) {
         switch (newStatus) {
             case ARRIVED:
@@ -536,7 +565,7 @@ public class BookingService {
                 // chatService.sendBookingUpdateMessage(
                 //         booking.getId(),
                 //         "ARRIVAL_CONFIRMATION",
-                //         "The professional has marked that they arrived. Please confirm their arrival."
+                //         "בעל המקצוע סימן שהגיע. אנא אשר את הגעתו."
                 // );
                 break;
             case COMPLETED:
@@ -810,7 +839,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 bookingId,
                 "TIME_PROPOSED",
-                "Technician proposed a new time: " + formatTimeRange(request.getProposedDatetime())
+                "בעל המקצוע הציע מועד חדש: " + formatTimeRange(request.getProposedDatetime())
         );
 
         notificationService.notifyCustomerTimeProposal(booking);
@@ -851,7 +880,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 bookingId,
                 "TIME_ACCEPTED",
-                "Time confirmed: " + formatTimeRange(booking.getScheduledDatetime())
+                "המועד אושר: " + formatTimeRange(booking.getScheduledDatetime())
         );
 
         notificationService.notifyTechnicianTimeAccepted(booking);
@@ -883,10 +912,10 @@ public class BookingService {
     }
 
     private String formatTimeRange(LocalDateTime start) {
-        if (start == null) return "TBD";
+        if (start == null) return "טרם נקבע";
         LocalDateTime end = start.plusHours(2);
         return String.format("%s, %s - %s",
-                start.format(DateTimeFormatter.ofPattern("MMM dd")),
+                start.format(DateTimeFormatter.ofPattern("d בMMMM", HEBREW)),
                 start.format(DateTimeFormatter.ofPattern("HH:mm")),
                 end.format(DateTimeFormatter.ofPattern("HH:mm"))
         );
@@ -917,7 +946,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 bookingId,
                 "ARRIVAL_CONFIRMED",
-                "Arrival confirmed. Payment released. The professional will now begin work."
+                "ההגעה אושרה. התשלום שוחרר. בעל המקצוע יתחיל כעת בעבודה."
         );
 
         notificationService.notifyPaymentRelease(booking);
@@ -999,7 +1028,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 bookingId,
                 "ARRIVAL_DISPUTED",
-                "Arrival has been disputed. An admin will review this case."
+                "הוגש ערעור על ההגעה. מנהל המערכת יבדוק את המקרה."
         );
 
         log.info("Arrival disputed for booking {}", booking.getBookingNumber());

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -26,6 +27,8 @@ import java.util.Map;
 public class NotificationService {
 
     private final DeviceTokenRepository deviceTokenRepository;
+
+    private static final Locale HEBREW = Locale.forLanguageTag("he");
 
     //  Notify single technician of new booking
     public void notifyTechnicianOfNewBooking(com.chikchak.model.Booking booking) {
@@ -40,14 +43,14 @@ public class NotificationService {
                 technician.getUser().getEmail(), booking.getBookingNumber());
 
         String message = String.format(
-                "New booking request #%s - %s at %s on %s",
+                "בקשת הזמנה חדשה #%s — %s בכתובת %s, בתאריך %s",
                 booking.getBookingNumber(),
-                booking.getServiceType().name(),
+                booking.getServiceType().getHebrewName(),
                 booking.getServiceAddress(),
-                booking.getPreferredDatetime().format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))
+                booking.getPreferredDatetime().format(DateTimeFormatter.ofPattern("d בMMMM, HH:mm", HEBREW))
         );
 
-        sendPush(technician.getUser(), "New booking request", message,
+        sendPush(technician.getUser(), "בקשת הזמנה חדשה", message,
                 bookingData(booking, "NEW_BOOKING_REQUEST"));
     }
 
@@ -56,8 +59,8 @@ public class NotificationService {
         log.info("Notifying customer {} that booking {} was declined",
                 booking.getCustomer().getEmail(), booking.getBookingNumber());
 
-        sendPush(booking.getCustomer(), "Booking declined",
-                "Your technician declined the booking. Please choose a refund method.",
+        sendPush(booking.getCustomer(), "ההזמנה נדחתה",
+                "בעל המקצוע דחה את ההזמנה. אנא בחר את אופן קבלת ההחזר.",
                 bookingData(booking, "BOOKING_DECLINED"));
     }
 
@@ -65,8 +68,8 @@ public class NotificationService {
         log.info("Notifying customer {} that booking {} was accepted",
                 booking.getCustomer().getEmail(), booking.getBookingNumber());
 
-        sendPush(booking.getCustomer(), "Booking accepted",
-                "Your booking has been accepted by " + booking.getTechnician().getUser().getFullName(),
+        sendPush(booking.getCustomer(), "ההזמנה אושרה",
+                "ההזמנה שלך אושרה על ידי " + booking.getTechnician().getUser().getFullName(),
                 bookingData(booking, "BOOKING_ACCEPTED"));
     }
 
@@ -74,8 +77,8 @@ public class NotificationService {
         log.info("Notifying customer {} about time proposal for booking {}",
                 booking.getCustomer().getEmail(), booking.getBookingNumber());
 
-        sendPush(booking.getCustomer(), "New time proposed",
-                "Your technician proposed a new time for your booking. Tap to review.",
+        sendPush(booking.getCustomer(), "הוצע מועד חדש",
+                "בעל המקצוע הציע מועד חדש להזמנה שלך. הקש לצפייה.",
                 bookingData(booking, "TIME_PROPOSED"));
     }
 
@@ -83,8 +86,8 @@ public class NotificationService {
         log.info("Notifying technician {} that time was accepted for booking {}",
                 booking.getTechnician().getUser().getEmail(), booking.getBookingNumber());
 
-        sendPush(booking.getTechnician().getUser(), "Time accepted",
-                "The customer accepted your proposed time for booking " + booking.getBookingNumber(),
+        sendPush(booking.getTechnician().getUser(), "המועד אושר",
+                "הלקוח אישר את המועד שהצעת להזמנה " + booking.getBookingNumber(),
                 bookingData(booking, "TIME_ACCEPTED"));
     }
 
@@ -96,18 +99,18 @@ public class NotificationService {
 
         switch (newStatus) {
             case ON_THE_WAY:
-                sendPush(booking.getCustomer(), "Technician on the way",
-                        "Your technician is on the way!",
+                sendPush(booking.getCustomer(), "בעל המקצוע בדרך",
+                        "בעל המקצוע בדרך אליך!",
                         bookingData(booking, "ON_THE_WAY"));
                 break;
             case ARRIVED:
-                sendPush(booking.getCustomer(), "Technician arrived",
-                        "Your technician has arrived. Please confirm to release payment.",
+                sendPush(booking.getCustomer(), "בעל המקצוע הגיע",
+                        "בעל המקצוע הגיע. אנא אשר את הגעתו לשחרור התשלום.",
                         bookingData(booking, "ARRIVED"));
                 break;
             case COMPLETED:
-                sendPush(booking.getCustomer(), "Service completed",
-                        "Your service has been completed. Please rate your experience.",
+                sendPush(booking.getCustomer(), "השירות הושלם",
+                        "השירות הושלם. אנא דרג את החוויה שלך.",
                         bookingData(booking, "COMPLETED"));
                 break;
         }
@@ -117,8 +120,8 @@ public class NotificationService {
         log.info("Processing payment release for booking: {}", booking.getBookingNumber());
 
         if (booking.getTechnician() != null) {
-            sendPush(booking.getTechnician().getUser(), "Payment released",
-                    "Payment has been released for booking " + booking.getBookingNumber(),
+            sendPush(booking.getTechnician().getUser(), "התשלום שוחרר",
+                    "התשלום שוחרר עבור הזמנה " + booking.getBookingNumber(),
                     bookingData(booking, "PAYMENT_RELEASED"));
         }
     }
@@ -127,13 +130,13 @@ public class NotificationService {
         log.info("Processing cancellation for booking: {}", booking.getBookingNumber());
 
         if (booking.getTechnician() != null) {
-            sendPush(booking.getTechnician().getUser(), "Booking cancelled",
-                    "Booking " + booking.getBookingNumber() + " has been cancelled",
+            sendPush(booking.getTechnician().getUser(), "ההזמנה בוטלה",
+                    "הזמנה " + booking.getBookingNumber() + " בוטלה",
                     bookingData(booking, "BOOKING_CANCELLED"));
         }
 
-        sendPush(booking.getCustomer(), "Booking cancelled",
-                "Your booking has been cancelled. Refund will be processed.",
+        sendPush(booking.getCustomer(), "ההזמנה בוטלה",
+                "ההזמנה שלך בוטלה. ההחזר יטופל בהקדם.",
                 bookingData(booking, "BOOKING_CANCELLED"));
     }
 
@@ -148,8 +151,8 @@ public class NotificationService {
             data.put("bookingId", String.valueOf(chat.getBooking().getId()));
         }
 
-        sendPush(recipient, "New message",
-                sender.getFullName() + " sent you a message", data);
+        sendPush(recipient, "הודעה חדשה",
+                sender.getFullName() + " שלח לך הודעה", data);
     }
 
     private Map<String, String> bookingData(Booking booking, String type) {

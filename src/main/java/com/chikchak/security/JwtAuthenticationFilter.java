@@ -36,7 +36,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            if (userDetails != null) {
+            // Reject tokens of non-ACTIVE users (e.g. SUSPENDED by admin) — otherwise
+            // suspension would have no effect on already-issued JWTs
+            if (userDetails != null && userDetails.isEnabled() && userDetails.isAccountNonLocked()) {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);

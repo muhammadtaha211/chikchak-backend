@@ -23,6 +23,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.role = :role AND u.status = :status")
     Page<User> findByRoleAndStatus(@Param("role") UserRole role, @Param("status") UserStatus status, Pageable pageable);
 
+    // search must be non-null (empty string matches all) — binding null into LOWER/CONCAT breaks PostgreSQL type inference
+    @Query("SELECT u FROM User u WHERE (:role IS NULL OR u.role = :role) " +
+            "AND (:status IS NULL OR u.status = :status) " +
+            "AND (LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY u.createdAt DESC")
+    Page<User> searchUsersForAdmin(@Param("role") UserRole role,
+                                   @Param("status") UserStatus status,
+                                   @Param("search") String search,
+                                   Pageable pageable);
+
     @Modifying
     @Query("UPDATE User u SET u.accountCredits = u.accountCredits + :amount WHERE u.id = :userId")
     void addAccountCredits(@Param("userId") Long userId, @Param("amount") BigDecimal amount);

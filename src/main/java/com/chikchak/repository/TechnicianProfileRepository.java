@@ -2,6 +2,8 @@ package com.chikchak.repository;
 
 import com.chikchak.model.ServiceType;
 import com.chikchak.model.TechnicianProfile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,18 @@ public interface TechnicianProfileRepository extends JpaRepository<TechnicianPro
     Optional<TechnicianProfile> findByUserId(Long userId);
 
     List<TechnicianProfile> findByIsVerifiedAndIsAvailable(Boolean isVerified, Boolean isAvailable);
+
+    @Query("SELECT t FROM TechnicianProfile t WHERE t.isVerified = false ORDER BY t.createdAt ASC")
+    Page<TechnicianProfile> findPendingApproval(Pageable pageable);
+
+    // search must be non-null (empty string matches all) — binding null into LOWER/CONCAT breaks PostgreSQL type inference
+    @Query("SELECT t FROM TechnicianProfile t WHERE (:verified IS NULL OR t.isVerified = :verified) " +
+            "AND (LOWER(t.user.fullName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(t.user.email) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY t.createdAt DESC")
+    Page<TechnicianProfile> searchTechniciansForAdmin(@Param("verified") Boolean verified,
+                                                      @Param("search") String search,
+                                                      Pageable pageable);
 
     @Query("SELECT t FROM TechnicianProfile t WHERE t.serviceType = :serviceType AND t.isVerified = true AND t.isAvailable = true")
     List<TechnicianProfile> findAvailableTechniciansByServiceType(@Param("serviceType") ServiceType serviceType);
