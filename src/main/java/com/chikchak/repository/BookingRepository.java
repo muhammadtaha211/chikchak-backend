@@ -76,4 +76,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStatusInAndCreatedAtBefore(List<BookingStatus> statuses, LocalDateTime before);
 
     List<Booking> findByStatusAndProposedDatetimeBefore(BookingStatus status, LocalDateTime before);
+
+    // search must be non-null (empty string matches all) — binding null into LOWER/CONCAT breaks PostgreSQL type inference
+    @Query("SELECT b FROM Booking b WHERE (:status IS NULL OR b.status = :status) " +
+            "AND (LOWER(b.bookingNumber) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(b.customer.fullName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY b.createdAt DESC")
+    Page<Booking> searchBookingsForAdmin(@Param("status") BookingStatus status,
+                                         @Param("search") String search,
+                                         Pageable pageable);
 }

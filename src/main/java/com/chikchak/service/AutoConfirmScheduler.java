@@ -39,7 +39,7 @@ public class AutoConfirmScheduler {
             // chatService.sendBookingUpdateMessage(
             //         booking.getId(),
             //         "AUTO_CONFIRMED",
-            //         "Arrival auto-confirmed after 10 minutes. Payment released."
+            //         "ההגעה אושרה אוטומטית לאחר 10 דקות. התשלום שוחרר."
             // );
 
             notificationService.notifyPaymentRelease(booking);

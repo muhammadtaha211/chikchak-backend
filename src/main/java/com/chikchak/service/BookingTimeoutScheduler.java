@@ -52,7 +52,7 @@ public class BookingTimeoutScheduler {
             chatService.sendBookingUpdateMessage(
                     booking.getId(),
                     "AUTO_CANCELLED_NO_RESPONSE",
-                    "Booking automatically cancelled — technician did not respond within 2 hours."
+                    "ההזמנה בוטלה אוטומטית — בעל המקצוע לא הגיב תוך שעתיים."
             );
 
             notificationService.notifyBookingCancellation(booking);
@@ -83,7 +83,7 @@ public class BookingTimeoutScheduler {
             chatService.sendBookingUpdateMessage(
                     booking.getId(),
                     "AUTO_CANCELLED_PROPOSAL_EXPIRED",
-                    "Booking automatically cancelled — customer did not respond to the time proposal within 24 hours."
+                    "ההזמנה בוטלה אוטומטית — הלקוח לא הגיב להצעת המועד תוך 24 שעות."
             );
 
             notificationService.notifyBookingCancellation(booking);

@@ -322,7 +322,7 @@ public class ChatService {
                 NotificationDto.builder()
                         .type("NEW_MESSAGE")
                         .bookingId(chat.getBooking() != null ? chat.getBooking().getId() : null)
-                        .message("New message from " + sender.getFullName())
+                        .message("הודעה חדשה מאת " + sender.getFullName())
                         .data(Map.of("chatId", chat.getId()))
                         .build()
         );
