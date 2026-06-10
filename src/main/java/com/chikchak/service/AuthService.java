@@ -154,7 +154,11 @@ public class AuthService {
 
     public User getCurrentUserEntity() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        // AnonymousAuthenticationToken reports isAuthenticated() = true but its principal
+        // is the String "anonymousUser" — without the instanceof check the cast below
+        // throws ClassCastException (HTTP 500) on permitAll endpoints like /api/auth/me
+        if (authentication == null || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
             throw new ChikChakException("User not authenticated");
         }
 
