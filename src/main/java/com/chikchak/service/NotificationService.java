@@ -45,7 +45,7 @@ public class NotificationService {
         String message = String.format(
                 "בקשת הזמנה חדשה #%s — %s בכתובת %s, בתאריך %s",
                 booking.getBookingNumber(),
-                booking.getServiceType().getHebrewName(),
+                ServiceTypeTranslator.toHebrew(booking.getServiceType()),
                 booking.getServiceAddress(),
                 booking.getPreferredDatetime().format(DateTimeFormatter.ofPattern("d בMMMM, HH:mm", HEBREW))
         );

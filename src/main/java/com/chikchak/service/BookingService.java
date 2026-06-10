@@ -190,7 +190,7 @@ public class BookingService {
                 booking.getId(),
                 "BOOKING_CREATED",
                 String.format("בקשת הזמנה חדשה ל%s — %s",
-                        request.getServiceType().getHebrewName(),
+                        ServiceTypeTranslator.toHebrew(request.getServiceType()),
                         formatTimeRange(booking.getPreferredDatetime())
                 )
         );
