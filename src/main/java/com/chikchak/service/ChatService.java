@@ -36,6 +36,7 @@ public class ChatService {
     private final UserMapper userMapper;
     private final SimpMessagingTemplate messagingTemplate;
     private final RateLimitService rateLimitService;
+    private final NotificationService notificationService;
 
     public ChatMessageDto sendMessage(SendChatMessageRequest request) {
         boolean hasMessage = request.getMessage() != null && !request.getMessage().trim().isEmpty();
@@ -325,6 +326,9 @@ public class ChatService {
                         .data(Map.of("chatId", chat.getId()))
                         .build()
         );
+
+        // FCM push to the other party's devices
+        notificationService.notifyNewChatMessage(recipient, sender, chat);
     }
 
     public ChatMessageDto sendBookingUpdateMessage(Long bookingId, String updateType, String message) {
