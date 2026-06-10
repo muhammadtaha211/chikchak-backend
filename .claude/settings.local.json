@@ -64,7 +64,30 @@
       "PowerShell(git checkout -b task/fcm-push-notifications)",
       "PowerShell($deadline = \\(Get-Date\\).AddSeconds\\(90\\); while \\(\\(Get-Date\\) -lt $deadline\\) { if \\(Test-Path startup-test.log\\) { $c = Get-Content startup-test.log -Raw -ErrorAction SilentlyContinue; if \\($c -match 'Started ChikchakBackendApplication|APPLICATION FAILED TO START|BUILD FAILURE|Error creating bean'\\) { break } }; Start-Sleep -Seconds 3 }; Select-String -Path startup-test.log -Pattern 'Firebase|Started Chikchak|FAILED|Error creating bean' | Select-Object -First 10 | ForEach-Object { $_.Line.Trim\\(\\) })",
       "PowerShell($login = Invoke-RestMethod -Method Post -Uri 'http://localhost:8080/api/auth/login' -ContentType 'application/json' -Body '{\"email\":\"admin@chikchak.com\",\"password\":\"admin123\"}'; $token = $login.data.token; if \\(-not $token\\) { $token = $login.token }; $headers = @{ Authorization = \"Bearer $token\" }; $resp = Invoke-RestMethod -Method Post -Uri 'http://localhost:8080/api/user/device-token' -Headers $headers -ContentType 'application/json' -Body '{\"token\":\"test-fcm-token-abc123\"}'; $resp | ConvertTo-Json -Depth 5)",
-      "PowerShell($env:PGPASSWORD='postgres'; psql -U postgres -h localhost -d CC -t -c \"SELECT id, user_id, token, created_at FROM device_tokens;\")"
+      "PowerShell($env:PGPASSWORD='postgres'; psql -U postgres -h localhost -d CC -t -c \"SELECT id, user_id, token, created_at FROM device_tokens;\")",
+      "PowerShell(git checkout master)",
+      "PowerShell(git pull origin master)",
+      "PowerShell(git checkout -b task/hebrew-messages-admin-endpoints)",
+      "PowerShell(.\\\\mvnw.cmd compile -q 2>$null; echo \"EXIT: $LASTEXITCODE\")",
+      "Bash(grep -qE 'Started ChikchakBackendApplication|APPLICATION FAILED TO START|BUILD FAILURE|ERROR\\\\] Failed' C:/Users/USER/AppData/Local/Temp/claude/C--Users-USER-Desktop-chikchak-backend/21a0d7e5-c60f-47f4-82d8-687801fc6506/tasks/bfxipaph5.output)",
+      "Bash(sleep 1)",
+      "Bash(grep -E 'Started ChikchakBackendApplication|APPLICATION FAILED TO START|BUILD FAILURE' C:/Users/USER/AppData/Local/Temp/claude/C--Users-USER-Desktop-chikchak-backend/21a0d7e5-c60f-47f4-82d8-687801fc6506/tasks/bfxipaph5.output)",
+      "Read(//tmp/**)",
+      "Bash(curl -s http://localhost:8080/api/admin/technicians/pending -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(curl -s 'http://localhost:8080/api/admin/technicians?page=0&size=3' -H 'Authorization: Bearer __TRACKED_VAR__')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:8080/api/auth/me\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:8080/api/customer/dashboard\")",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/admin/users/31/suspend -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -H 'Content-Type: application/json' -d '{\"reason\":\"retest\"}')",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"suspendtest@test.com\",\"password\":\"test1234\"}')",
+      "Bash(curl -s -X POST http://localhost:8080/api/admin/technicians/5/reject -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -H 'Content-Type: application/json' -d '{\"reason\":\"incomplete profile - smoke test\"}')",
+      "Bash(python -m json.tool)",
+      "Bash(jshell .claude-tmp-datecheck.jsh)",
+      "Bash(rm -f .claude-tmp-datecheck.jsh .claude-tmp-dateresult.txt /tmp/admintoken.txt; git status --short)",
+      "Bash(git fetch *)",
+      "Bash(break)",
+      "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\\\\n\" \"http://localhost:8080/api/auth/me\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:8080/api/auth/me\" -H \"Authorization: Bearer garbage.token.here\")",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@chikchak.com\",\"password\":\"admin123\"}')"
     ]
   }
 }
