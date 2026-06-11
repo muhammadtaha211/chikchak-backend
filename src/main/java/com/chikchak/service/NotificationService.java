@@ -43,7 +43,7 @@ public class NotificationService {
                 technician.getUser().getEmail(), booking.getBookingNumber());
 
         String message = String.format(
-                "בקשת הזמנה חדשה #%s — %s בכתובת %s, בתאריך %s",
+                "בקשת הזמנה חדשה #%s, %s בכתובת %s, בתאריך %s",
                 booking.getBookingNumber(),
                 ServiceTypeTranslator.toHebrew(booking.getServiceType()),
                 booking.getServiceAddress(),

@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,6 +19,7 @@ public class JobTypeDto {
     @Builder.Default
     private String nameAr = "";
     private ServiceType serviceType;
-    private BigDecimal minPrice;
-    private BigDecimal maxPrice;
+    // Integer (whole shekels) — FlutterFlow expects int price estimates, entity stays BigDecimal
+    private Integer minPrice;
+    private Integer maxPrice;
 }
