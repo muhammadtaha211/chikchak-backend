@@ -189,7 +189,7 @@ public class BookingService {
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "BOOKING_CREATED",
-                String.format("בקשת הזמנה חדשה ל%s — %s",
+                String.format("בקשת הזמנה חדשה ל%s, %s",
                         ServiceTypeTranslator.toHebrew(request.getServiceType()),
                         formatTimeRange(booking.getPreferredDatetime())
                 )
@@ -224,7 +224,7 @@ public class BookingService {
             throw new ChikChakException("This booking is not assigned to you");
         }
 
-        if (booking.getStatus() != BookingStatus.PENDING) {
+        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.TIME_DISCUSSION) {
             throw new ChikChakException("This booking is no longer pending");
         }
 
@@ -247,6 +247,8 @@ public class BookingService {
     }
 
     private BookingDto acceptBooking(Booking booking, LocalDateTime suggestedTime) {
+        BookingStatus previousStatus = booking.getStatus();
+
         // Use suggested time if provided, otherwise use preferred time
         if (suggestedTime != null) {
             booking.setScheduledDatetime(suggestedTime);
@@ -255,16 +257,17 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.SCHEDULED);
+        booking.setProposedDatetime(null);
         booking = bookingRepository.save(booking);
 
-        createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.SCHEDULED,
+        createStatusHistory(booking, previousStatus, BookingStatus.SCHEDULED,
                 "Technician accepted booking");
 
         // Send chat message
         chatService.sendBookingUpdateMessage(
                 booking.getId(),
                 "BOOKING_ACCEPTED",
-                "בעל המקצוע אישר את ההזמנה! נקבע ל־" + formatTimeRange(booking.getScheduledDatetime())
+                "בעל המקצוע אישר את ההזמנה! נקבע ל-" + formatTimeRange(booking.getScheduledDatetime())
         );
 
         // Notify customer
@@ -276,11 +279,13 @@ public class BookingService {
     }
 
     private BookingDto discussBookingTime(Booking booking, LocalDateTime suggestedTime, String message) {
+        BookingStatus previousStatus = booking.getStatus();
+
         booking.setStatus(BookingStatus.TIME_DISCUSSION);
         booking.setProposedDatetime(suggestedTime);
         booking = bookingRepository.save(booking);
 
-        createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.TIME_DISCUSSION,
+        createStatusHistory(booking, previousStatus, BookingStatus.TIME_DISCUSSION,
                 "Technician requested time discussion");
 
         // Send time proposal in chat
@@ -299,11 +304,13 @@ public class BookingService {
     }
 
     private BookingDto declineBooking(Booking booking, String reason) {
+        BookingStatus previousStatus = booking.getStatus();
+
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledDatetime(LocalDateTime.now());
         booking = bookingRepository.save(booking);
 
-        createStatusHistory(booking, BookingStatus.PENDING, BookingStatus.CANCELLED,
+        createStatusHistory(booking, previousStatus, BookingStatus.CANCELLED,
                 "Technician declined: " + (reason != null ? reason : "No reason provided"));
 
         // Initiate refund process

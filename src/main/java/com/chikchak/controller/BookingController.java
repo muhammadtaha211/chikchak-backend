@@ -97,7 +97,7 @@ public class BookingController {
     @Operation(summary = "Decline booking", description = "Customer declines and cancels booking — refund choice deferred")
     public ResponseEntity<ApiResponse<String>> declineBooking(@PathVariable Long id) {
         bookingService.declineAndRefund(id);
-        return ResponseEntity.ok(ApiResponse.success("Booking cancelled — choose your refund method on the refund page", null));
+        return ResponseEntity.ok(ApiResponse.success("Booking cancelled, choose your refund method on the refund page", null));
     }
 
     @PostMapping("/{id}/process-refund")
