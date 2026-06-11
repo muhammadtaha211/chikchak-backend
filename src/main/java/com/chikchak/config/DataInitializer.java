@@ -32,11 +32,11 @@ public class DataInitializer {
                                PasswordEncoder passwordEncoder) {
         return args -> {
             // Create default admin user
-            if (!userRepository.existsByEmail("admin@chikchak.com")) {
+            if (!userRepository.existsByEmail("admin@takin.com")) {
                 User admin = User.builder()
-                        .email("admin@chikchak.com")
-                        .password(passwordEncoder.encode("admin123"))
-                        .fullName("ChikChak Admin")
+                        .email("admin@takin.com")
+                        .password(passwordEncoder.encode("HamodeAnwarTaha211"))
+                        .fullName("Takin Admin")
                         .role(UserRole.ADMIN)
                         .preferredLanguage("he")
                         .build();
