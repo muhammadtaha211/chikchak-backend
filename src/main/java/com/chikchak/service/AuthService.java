@@ -242,17 +242,12 @@ public class AuthService {
      * while a leaving technician's active jobs are cancelled so the customer — who stays —
      * sees the cancellation and can rebook with someone else.
      */
-    public void deleteAccount(DeleteAccountRequest request) {
+    public void deleteAccount() {
         User user = getCurrentUserEntity();
 
         // Admins manage other accounts; they must not self-delete through this endpoint
         if (user.getRole() == UserRole.ADMIN) {
             throw new ChikChakException("Admin accounts cannot be deleted through this endpoint");
-        }
-
-        // Re-confirm identity — guards against a stolen/unattended session
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new ChikChakException("Password is incorrect");
         }
 
         // Resolve in-flight bookings before scrubbing the account

@@ -61,10 +61,10 @@ public class AuthController {
 
     @DeleteMapping("/account")
     @Operation(summary = "Delete account permanently",
-            description = "Permanently deletes the current user's account (anonymizes personal data and revokes access). "
-                    + "Requires password re-confirmation. Blocked while the user has active bookings.")
-    public ResponseEntity<ApiResponse<String>> deleteAccount(@Valid @RequestBody DeleteAccountRequest request) {
-        authService.deleteAccount(request);
+            description = "Permanently deletes the current authenticated user's account (anonymizes personal data and revokes access). "
+                    + "A customer's active bookings are deleted; a technician's active jobs are cancelled.")
+    public ResponseEntity<ApiResponse<String>> deleteAccount() {
+        authService.deleteAccount();
         return ResponseEntity.ok(ApiResponse.success("Account deleted successfully", null));
     }
 }
