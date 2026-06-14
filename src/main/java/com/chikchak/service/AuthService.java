@@ -4,6 +4,8 @@ import com.chikchak.dto.*;
 import com.chikchak.exception.ChikChakException;
 import com.chikchak.mapper.UserMapper;
 import com.chikchak.model.*;
+import com.chikchak.repository.BookingRepository;
+import com.chikchak.repository.DeviceTokenRepository;
 import com.chikchak.repository.TechnicianProfileRepository;
 import com.chikchak.repository.UserRepository;
 import com.chikchak.security.CustomUserDetails;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chikchak.config.DataInitializer;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,8 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final TechnicianProfileRepository technicianProfileRepository;
+    private final BookingRepository bookingRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
@@ -216,7 +221,68 @@ public class AuthService {
         
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        
+
         log.info("Password changed for user: {}", user.getEmail());
+    }
+
+    /**
+     * Permanently deletes the current user's account (soft-delete + anonymize).
+     * The user row is kept so that the other party's bookings, payments and ratings
+     * stay intact for accounting/history, but every identifying field is scrubbed,
+     * the password is scrambled and the status is flipped to DELETED so the account
+     * can never be authenticated again (the JWT filter already rejects non-ACTIVE users).
+     */
+    public void deleteAccount(DeleteAccountRequest request) {
+        User user = getCurrentUserEntity();
+
+        // Admins manage other accounts; they must not self-delete through this endpoint
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new ChikChakException("Admin accounts cannot be deleted through this endpoint");
+        }
+
+        // Re-confirm identity — guards against a stolen/unattended session
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new ChikChakException("Password is incorrect");
+        }
+
+        // Block deletion while work is still in flight (money may be in escrow,
+        // a technician may be en route) — the user must finish or cancel it first
+        if (user.getRole() == UserRole.CUSTOMER) {
+            if (!bookingRepository.findNonTerminalBookingsForCustomer(user.getId()).isEmpty()) {
+                throw new ChikChakException("Please complete or cancel your active bookings before deleting your account");
+            }
+        } else if (user.getRole() == UserRole.TECHNICIAN && user.getTechnicianProfile() != null) {
+            if (!bookingRepository.findActiveBookingsForTechnician(user.getTechnicianProfile().getId()).isEmpty()) {
+                throw new ChikChakException("Please complete or cancel your active jobs before deleting your account");
+            }
+        }
+
+        String originalEmail = user.getEmail();
+
+        // Anonymize PII. The id-based placeholder email is unique and frees the
+        // original address so it can be used to register a fresh account later.
+        user.setEmail("deleted_" + user.getId() + "@deleted.chikchak");
+        user.setFullName("Deleted User");
+        user.setPhoneNumber(null);
+        user.setProfileImageUrl(null);
+        user.setAddress(null);
+        user.setCity(null);
+        user.setLatitude(null);
+        user.setLongitude(null);
+        // Scramble the password so the account can never be authenticated again
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setStatus(UserStatus.DELETED);
+
+        // Take a deleted technician out of search/matching
+        if (user.getRole() == UserRole.TECHNICIAN && user.getTechnicianProfile() != null) {
+            user.getTechnicianProfile().setIsAvailable(false);
+        }
+
+        userRepository.save(user);
+
+        // Stop all push notifications to this user's devices
+        deviceTokenRepository.deleteByUserId(user.getId());
+
+        log.info("Account permanently deleted (anonymized) for user id {} (was {})", user.getId(), originalEmail);
     }
 }
