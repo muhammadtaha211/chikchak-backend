@@ -87,7 +87,14 @@
       "Bash(break)",
       "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\\\\n\" \"http://localhost:8080/api/auth/me\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:8080/api/auth/me\" -H \"Authorization: Bearer garbage.token.here\")",
-      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@chikchak.com\",\"password\":\"admin123\"}')"
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@chikchak.com\",\"password\":\"admin123\"}')",
+      "Bash(git --no-pager grep -n \"instanceof CustomUserDetails\" -- src/main/java/com/chikchak/service/AuthService.java)",
+      "Bash(git --no-pager show HEAD:src/main/java/com/chikchak/service/AuthService.java)",
+      "PowerShell(try { \\(Invoke-WebRequest -Uri \"http://localhost:8080/api/public/health\" -UseBasicParsing -TimeoutSec 5\\).Content } catch { \"backend not reachable: $\\($_.Exception.Message\\)\" })",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Test-NetConnection -ComputerName localhost -Port 5432 -InformationLevel Quiet -WarningAction SilentlyContinue)",
+      "PowerShell(Set-Location C:\\\\Users\\\\USER\\\\Desktop\\\\chikchak-backend; $env:ALLOWED_ORIGINS='http://localhost:5173,http://localhost:3000'; .\\\\mvnw.cmd spring-boot:run)",
+      "PowerShell($conns = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue; $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique; foreach \\($p in $pids\\) { Stop-Process -Id $p -Force -Confirm:$false; \"stopped pid $p\" })"
     ]
   }
 }
