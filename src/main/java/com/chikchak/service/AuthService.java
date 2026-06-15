@@ -91,6 +91,15 @@ public class AuthService {
             throw new ChikChakException("Email is already registered");
         }
 
+        // Block duplicate phone numbers when one is supplied. Phone is optional at
+        // registration, so only check when present. Deleted accounts have their phone
+        // nulled out (see deleteAccount), so they never collide here.
+        String phoneNumber = registerRequest.getPhoneNumber();
+        if (phoneNumber != null && !phoneNumber.isBlank()
+                && userRepository.existsByPhoneNumber(phoneNumber)) {
+            throw new ChikChakException("Phone number is already registered");
+        }
+
         // Create user
         User user = User.builder()
             .email(registerRequest.getEmail())
