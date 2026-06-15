@@ -20,6 +20,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByRole(UserRole role);
     List<User> findByStatus(UserStatus status);
 
+    // Returns a list, not Optional: phone_number is not unique in the schema, so
+    // a single-result query could throw NonUniqueResultException (500). Callers
+    // must handle the empty and multi-match cases explicitly.
+    List<User> findByPhoneNumberAndStatus(String phoneNumber, UserStatus status);
+
     @Query("SELECT u FROM User u WHERE u.role = :role AND u.status = :status")
     Page<User> findByRoleAndStatus(@Param("role") UserRole role, @Param("status") UserStatus status, Pageable pageable);
 

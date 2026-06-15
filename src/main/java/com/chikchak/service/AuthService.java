@@ -11,6 +11,8 @@ import com.chikchak.repository.TechnicianProfileRepository;
 import com.chikchak.repository.UserRepository;
 import com.chikchak.security.CustomUserDetails;
 import com.chikchak.security.JwtTokenProvider;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -228,6 +230,49 @@ public class AuthService {
         userRepository.save(user);
 
         log.info("Password changed for user: {}", user.getEmail());
+    }
+
+    /**
+     * Resets a user's password after their phone number has been verified on the client
+     * via Firebase phone auth. The client sends the Firebase ID token; we verify it
+     * server-side, read the verified phone_number claim, and update the matching account.
+     * No JWT is returned — the user logs in normally afterwards.
+     */
+    public void resetPassword(ResetPasswordRequest request) {
+        FirebaseToken decoded;
+        try {
+            decoded = FirebaseAuth.getInstance().verifyIdToken(request.getFirebaseIdToken());
+        } catch (Exception e) {
+            // Any failure (invalid/expired token, Firebase not initialized) becomes a clean
+            // 400 via the global handler rather than a 500. Don't log the token itself.
+            log.warn("Password reset failed: Firebase token verification failed", e);
+            throw new ChikChakException("Phone verification failed");
+        }
+
+        String phone = (String) decoded.getClaims().get("phone_number");
+        if (phone == null || phone.isBlank()) {
+            // A token with no verified phone claim means the phone was never verified
+            log.warn("Password reset failed: Firebase token has no phone_number claim");
+            throw new ChikChakException("Phone verification failed");
+        }
+
+        // phone_number is not unique in the schema, so this returns a list
+        List<User> users = userRepository.findByPhoneNumberAndStatus(phone, UserStatus.ACTIVE);
+        if (users.isEmpty()) {
+            throw new ChikChakException("No account is registered with this phone number");
+        }
+        if (users.size() > 1) {
+            // Ambiguous — don't guess which account to reset
+            log.warn("Password reset blocked: {} active accounts share this phone number", users.size());
+            throw new ChikChakException("Multiple accounts are registered with this phone number. Please contact support.");
+        }
+
+        User user = users.get(0);
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Log without the token or password
+        log.info("Password reset successful for user id {}", user.getId());
     }
 
     /**

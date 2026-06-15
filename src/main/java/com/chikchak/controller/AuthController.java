@@ -31,6 +31,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Registration successful", authResponse));
     }
 
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password", description = "Reset password after Firebase phone verification (public)")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successful", null));
+    }
+
     @GetMapping("/me")
     @Operation(summary = "Get current user", description = "Get current authenticated user details")
     public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
