@@ -1,7 +1,7 @@
-# ChikChak Project - CLAUDE.md
+# Takin Project - CLAUDE.md
 
 ## Project Overview
-ChikChak is a home services marketplace app in Tel Aviv connecting customers with verified technicians (plumbers, electricians, AC repair, etc). Built with Spring Boot (Java 17) backend + FlutterFlow frontend, connected via ngrok during development.
+Takin is a home services marketplace app in Tel Aviv connecting customers with verified technicians (plumbers, electricians, AC repair, etc). Built with Spring Boot (Java 17) backend + FlutterFlow frontend, connected via ngrok during development.
 
 ## Tech Stack
 - **Backend**: Spring Boot 3.2.1, Java 17, PostgreSQL, IntelliJ IDEA
@@ -171,6 +171,19 @@ ChikChak is a home services marketplace app in Tel Aviv connecting customers wit
 - **Prefer frontend solutions**: When possible, solve on FlutterFlow side to reduce backend bug risk.
 - **Function-first**: Complete functionality before UI polish.
 - **Test before suggesting**: Verify backend compiles and endpoints work before providing FlutterFlow workflow.
+
+## Marketing Skills (installed globally)
+A marketing skills suite (`coreyhaines31/marketingskills`) is installed via symlink at the global/user scope (`C:\Users\USER\.claude\skills\` → `C:\Users\USER\.agents\skills\`). These are Claude Code Skills, NOT backend code — they apply to growth/marketing tasks for Takin (e.g. App Store listing, launch, ads, landing copy), not to the Spring Boot app.
+
+- **How to use**: invoke via the Skill tool, or they auto-surface based on each skill's `description` triggers. Skills cross-reference each other (e.g. `copywriting` → "for email copy, see `emails`"). Use `find-skills` to navigate/route when unsure which to pick.
+- **Start here for any marketing work**: run `product-marketing` first — it writes `.agents/product-marketing.md` (product, ICP, positioning) that the other skills read for context. Then `marketing-plan` / `marketing-ideas` for strategy.
+- **Available skills by area**:
+  - *Strategy & research*: marketing-plan, marketing-ideas, product-marketing, content-strategy, customer-research, marketing-psychology, competitor-profiling, competitors
+  - *Copy & content*: copywriting, copy-editing, ad-creative, emails, cold-email, social, sms, image, video
+  - *Web & conversion*: cro, signup, onboarding, paywalls, popups, pricing, free-tools, lead-magnets, site-architecture
+  - *SEO & discovery*: seo-audit, ai-seo, programmatic-seo, schema, directory-submissions, aso
+  - *Acquisition & growth*: ads, ab-testing, analytics, launch, referrals, co-marketing, community-marketing, public-relations, prospecting, revops, sales-enablement, churn-prevention
+- **Note**: `aso` (App Store Optimization) and `launch` are the most directly relevant for getting Takin's app discovered in Tel Aviv.
 
 ## Testing Credentials
 - Customer: customer@test.com
