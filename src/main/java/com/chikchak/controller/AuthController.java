@@ -58,6 +58,15 @@ public class AuthController {
         authService.changePassword(request.getCurrentPassword(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
     }
+
+    @DeleteMapping("/account")
+    @Operation(summary = "Delete account permanently",
+            description = "Permanently deletes the current authenticated user's account (anonymizes personal data and revokes access). "
+                    + "A customer's active bookings are deleted; a technician's active jobs are cancelled.")
+    public ResponseEntity<ApiResponse<String>> deleteAccount() {
+        authService.deleteAccount();
+        return ResponseEntity.ok(ApiResponse.success("Account deleted successfully", null));
+    }
 }
 
 

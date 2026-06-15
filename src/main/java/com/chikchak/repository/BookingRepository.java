@@ -54,6 +54,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.technician.id = :technicianId AND b.status IN ('ACCEPTED', 'SCHEDULED', 'ON_THE_WAY', 'ARRIVED', 'IN_PROGRESS')")
     List<Booking> findActiveBookingsForTechnician(@Param("technicianId") Long technicianId);
 
+    @Query("SELECT b FROM Booking b WHERE b.technician.id = :technicianId AND b.status IN ('PENDING', 'TECHNICIAN_NOTIFIED', 'TIME_DISCUSSION', 'ACCEPTED', 'SCHEDULED', 'ON_THE_WAY', 'ARRIVED', 'IN_PROGRESS', 'ASSESSMENT_COMPLETE')")
+    List<Booking> findNonTerminalBookingsForTechnician(@Param("technicianId") Long technicianId);
+
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.technician.id = :technicianId AND b.status = 'COMPLETED'")
     Long countCompletedBookingsByTechnicianId(@Param("technicianId") Long technicianId);
 
