@@ -21,6 +21,7 @@ public interface BookingMapper {
     @Mapping(target = "photos", source = "photos", qualifiedByName = "listToString")
     Booking toEntity(BookingDto bookingDto);
 
+    @Mapping(target = "chatId", source = "chat.id")
     ChatMessageDto toDto(ChatMessage chatMessage);
 
     ChatMessage toEntity(ChatMessageDto chatMessageDto);
