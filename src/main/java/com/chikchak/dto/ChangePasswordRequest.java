@@ -2,11 +2,12 @@ package com.chikchak.dto;
 
 // Supporting DTOs for controllers
 
+import com.chikchak.validation.ValidationConstants;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 
 @Data
@@ -17,6 +18,6 @@ public class ChangePasswordRequest {
     private String currentPassword;
 
     @NotBlank(message = "New password is required")
-    @Size(min = 6, message = "New password must be at least 6 characters")
+    @Pattern(regexp = ValidationConstants.PASSWORD_REGEX, message = ValidationConstants.PASSWORD_MESSAGE)
     private String newPassword;
 }

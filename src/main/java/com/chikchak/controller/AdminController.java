@@ -5,6 +5,7 @@ import com.chikchak.model.BookingStatus;
 import com.chikchak.model.UserRole;
 import com.chikchak.model.UserStatus;
 import com.chikchak.service.AdminService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,7 @@ public class AdminController {
     @Operation(summary = "Reject technician", description = "Leave isVerified false; the optional reason is recorded in the audit log")
     public ResponseEntity<ApiResponse<TechnicianProfileDto>> rejectTechnician(
             @PathVariable Long id,
-            @RequestBody(required = false) AdminReasonRequest request) {
+            @Valid @RequestBody(required = false) AdminReasonRequest request) {
         TechnicianProfileDto technician = adminService.rejectTechnician(id, reasonOf(request));
         return ResponseEntity.ok(ApiResponse.success("Technician rejected", technician));
     }
@@ -92,7 +93,7 @@ public class AdminController {
     @Operation(summary = "Suspend user", description = "Set user status to SUSPENDED; the user can no longer authenticate")
     public ResponseEntity<ApiResponse<UserDto>> suspendUser(
             @PathVariable Long id,
-            @RequestBody(required = false) AdminReasonRequest request) {
+            @Valid @RequestBody(required = false) AdminReasonRequest request) {
         UserDto user = adminService.suspendUser(id, reasonOf(request));
         return ResponseEntity.ok(ApiResponse.success("User suspended", user));
     }
@@ -128,7 +129,7 @@ public class AdminController {
             description = "Admin force-cancel with optional reason; reuses the normal cancellation side-effects without the customer/technician permission rules")
     public ResponseEntity<ApiResponse<BookingDto>> cancelBooking(
             @PathVariable Long id,
-            @RequestBody(required = false) AdminReasonRequest request) {
+            @Valid @RequestBody(required = false) AdminReasonRequest request) {
         BookingDto booking = adminService.cancelBooking(id, reasonOf(request));
         return ResponseEntity.ok(ApiResponse.success("Booking cancelled", booking));
     }
@@ -138,7 +139,7 @@ public class AdminController {
             description = "Admin escape hatch: force a booking to a given status, bypassing role and state-transition restrictions while keeping normal side-effects")
     public ResponseEntity<ApiResponse<BookingDto>> forceBookingStatus(
             @PathVariable Long id,
-            @RequestBody BookingUpdateRequest request) {
+            @Valid @RequestBody BookingUpdateRequest request) {
         BookingDto booking = adminService.forceBookingStatus(id, request.getStatus(), request.getReason());
         return ResponseEntity.ok(ApiResponse.success("Booking status updated", booking));
     }

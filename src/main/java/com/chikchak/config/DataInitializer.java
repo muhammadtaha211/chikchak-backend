@@ -9,6 +9,7 @@ import com.chikchak.repository.JobTypeRepository;
 import com.chikchak.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,22 +27,31 @@ public class DataInitializer {
     public static final BigDecimal STANDARD_DIAGNOSIS_FEE = new BigDecimal("80");
     public static final BigDecimal MOVERS_DIAGNOSIS_FEE = BigDecimal.ZERO;
 
+    // Initial admin credentials are supplied via env vars, never hardcoded.
+    @Value("${admin.email:}")
+    private String adminEmail;
+
+    @Value("${admin.password:}")
+    private String adminPassword;
+
     @Bean
     CommandLineRunner initData(UserRepository userRepository,
                                JobTypeRepository jobTypeRepository,
                                PasswordEncoder passwordEncoder) {
         return args -> {
-            // Create default admin user
-            if (!userRepository.existsByEmail("admin@takin.com")) {
+            // Create the initial admin from env-provided credentials (never hardcoded)
+            if (adminEmail.isBlank() || adminPassword.isBlank()) {
+                log.warn("ADMIN_EMAIL/ADMIN_PASSWORD not set - skipping admin user seeding");
+            } else if (!userRepository.existsByEmail(adminEmail)) {
                 User admin = User.builder()
-                        .email("admin@takin.com")
-                        .password(passwordEncoder.encode("HamodeAnwarTaha211"))
+                        .email(adminEmail)
+                        .password(passwordEncoder.encode(adminPassword))
                         .fullName("Takin Admin")
                         .role(UserRole.ADMIN)
                         .preferredLanguage("he")
                         .build();
                 userRepository.save(admin);
-                log.info("Default admin user created");
+                log.info("Admin user '{}' created", adminEmail);
             }
 
             // Seed platform-set job type catalog (EN/HE/AR + min/max price)
