@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -771,14 +772,28 @@ public class BookingService {
         TechnicianProfile profile = technicianProfileRepository.findByUserId(currentUser.getId())
                 .orElseThrow(() -> new ChikChakException("Technician profile not found"));
 
-        Long newRequests = bookingRepository.countNewRequestsForTechnician(profile.getId());
-        Long confirmed = bookingRepository.countConfirmedBookingsForTechnician(profile.getId());
-        Long timeDiscussion = bookingRepository.countTimeDiscussionForTechnician(profile.getId());
+        // One grouped COUNT query for all badge statuses instead of three separate counts.
+        List<BookingStatus> confirmedStatuses = List.of(
+                BookingStatus.ACCEPTED, BookingStatus.SCHEDULED, BookingStatus.ON_THE_WAY,
+                BookingStatus.ARRIVED, BookingStatus.IN_PROGRESS);
+        List<BookingStatus> requestedStatuses = new ArrayList<>(confirmedStatuses);
+        requestedStatuses.add(BookingStatus.PENDING);
+        requestedStatuses.add(BookingStatus.TIME_DISCUSSION);
+
+        Map<BookingStatus, Long> countsByStatus = bookingRepository
+                .countByTechnicianIdGroupedByStatus(profile.getId(), requestedStatuses).stream()
+                .collect(Collectors.toMap(row -> (BookingStatus) row[0], row -> (Long) row[1]));
+
+        long newRequests = countsByStatus.getOrDefault(BookingStatus.PENDING, 0L);
+        long timeDiscussion = countsByStatus.getOrDefault(BookingStatus.TIME_DISCUSSION, 0L);
+        long confirmed = confirmedStatuses.stream()
+                .mapToLong(s -> countsByStatus.getOrDefault(s, 0L))
+                .sum();
 
         return TechnicianBadgeCountsDto.builder()
-                .newRequestsCount(newRequests.intValue())
-                .confirmedBookingsCount(confirmed.intValue())
-                .timeDiscussionCount(timeDiscussion.intValue())
+                .newRequestsCount((int) newRequests)
+                .confirmedBookingsCount((int) confirmed)
+                .timeDiscussionCount((int) timeDiscussion)
                 .scheduleTotalCount((int) (confirmed + timeDiscussion))
                 .build();
     }
@@ -791,12 +806,15 @@ public class BookingService {
         }
 
         List<Booking> activeBookings = bookingRepository.findActiveBookingsForCustomer(currentUser.getId());
-        List<Booking> recentBookings = bookingRepository.findByCustomerId(currentUser.getId());
 
-        Long totalBookings = (long) recentBookings.size();
-        Long completedBookings = recentBookings.stream()
-                .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                .count();
+        // Totals via COUNT and the recent list via a LIMIT-10 page, instead of loading the
+        // customer's entire booking history into memory on every dashboard poll.
+        long totalBookings = bookingRepository.countByCustomerId(currentUser.getId());
+        long completedBookings = bookingRepository.countByCustomerIdAndStatus(
+                currentUser.getId(), BookingStatus.COMPLETED);
+        List<Booking> recentBookings = bookingRepository
+                .findByCustomerIdOrderByCreatedAtDesc(currentUser.getId(), PageRequest.of(0, 10))
+                .getContent();
 
         List<BookingDto> activeBookingDtos = activeBookings.stream()
                 .map(bookingMapper::toDto)
@@ -806,12 +824,11 @@ public class BookingService {
         return CustomerDashboardDto.builder()
                 .activeBookings(activeBookingDtos)
                 .recentBookings(recentBookings.stream()
-                        .limit(10)
                         .map(bookingMapper::toDto)
                         .collect(Collectors.toList()))
                 .accountCredits(currentUser.getAccountCredits())
-                .totalBookings(totalBookings.intValue())
-                .completedBookings(completedBookings.intValue())
+                .totalBookings((int) totalBookings)
+                .completedBookings((int) completedBookings)
                 .build();
     }
 

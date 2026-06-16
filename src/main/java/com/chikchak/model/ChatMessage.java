@@ -8,7 +8,10 @@ import lombok.NoArgsConstructor;
 
 // Chat Message Entity
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "chat_messages", indexes = {
+        @Index(name = "idx_chat_messages_chat_created", columnList = "chat_id, created_at"),
+        @Index(name = "idx_chat_messages_chat_isread", columnList = "chat_id, is_read")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

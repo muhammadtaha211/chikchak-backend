@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "ratings", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"booking_id"})
+}, indexes = {
+        @Index(name = "idx_ratings_technician", columnList = "technician_id")
 })
 @Data
 @NoArgsConstructor

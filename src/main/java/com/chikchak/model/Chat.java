@@ -15,7 +15,11 @@ import java.util.List;
 
 
 @Entity
-@Table(name = "chats")
+@Table(name = "chats", indexes = {
+        @Index(name = "idx_chats_customer", columnList = "customer_id"),
+        @Index(name = "idx_chats_technician", columnList = "technician_id"),
+        @Index(name = "idx_chats_booking", columnList = "booking_id")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -204,18 +204,10 @@ public class ChatService {
 
         validateChatAccess(chat, currentUser);
 
-        List<ChatMessage> unreadMessages = chatMessageRepository.findByChatIdAndIsReadFalse(chatId);
+        // Single bulk UPDATE instead of one save() per unread message.
+        int updated = chatMessageRepository.markMessagesAsRead(chatId, currentUser.getId());
 
-        // Mark messages as read (only messages not sent by current user)
-        unreadMessages.stream()
-                .filter(msg -> msg.getSender() != null && !msg.getSender().getId().equals(currentUser.getId()))
-                .forEach(msg -> {
-                    msg.setIsRead(true);
-                    chatMessageRepository.save(msg);
-                });
-
-        log.info("Marked {} messages as read in chat {}",
-                unreadMessages.size(), chat.getId());
+        log.info("Marked {} messages as read in chat {}", updated, chat.getId());
     }
 
     public Long getUnreadMessageCount(Long chatId) {
@@ -231,20 +223,12 @@ public class ChatService {
 
     public List<ChatDto> getUserChats() {
         User currentUser = authService.getCurrentUserEntity();
-        List<Chat> chats = chatRepository.findChatsForUser(currentUser.getId());
-
-        return chats.stream()
-                .map(this::toChatDto)
-                .collect(Collectors.toList());
+        return toChatDtos(chatRepository.findChatsForUser(currentUser.getId()), currentUser);
     }
 
     public List<ChatDto> getActiveChatsForUser() {
         User currentUser = authService.getCurrentUserEntity();
-        List<Chat> chats = chatRepository.findActiveChatsForUser(currentUser.getId());
-
-        return chats.stream()
-                .map(this::toChatDto)
-                .collect(Collectors.toList());
+        return toChatDtos(chatRepository.findActiveChatsForUser(currentUser.getId()), currentUser);
     }
 
     public ChatDto getChatById(Long chatId) {
@@ -255,19 +239,30 @@ public class ChatService {
 
         validateChatAccess(chat, currentUser);
 
-        return toChatDto(chat);
+        Long unreadCount = chatRepository.countUnreadMessagesInChat(chat.getId(), currentUser.getId());
+        return toChatDto(chat, currentUser, unreadCount);
     }
 
-    private ChatDto toChatDto(Chat chat) {
-        User currentUser = authService.getCurrentUserEntity();
+    // Maps a list of chats with their unread counts resolved in ONE batched query (keyed by
+    // chat id) instead of a COUNT per chat — this was the chat-list N+1.
+    private List<ChatDto> toChatDtos(List<Chat> chats, User currentUser) {
+        if (chats.isEmpty()) {
+            return List.of();
+        }
+        List<Long> chatIds = chats.stream().map(Chat::getId).collect(Collectors.toList());
+        Map<Long, Long> unreadByChat = chatRepository
+                .countUnreadMessagesByChatIds(chatIds, currentUser.getId()).stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        return chats.stream()
+                .map(chat -> toChatDto(chat, currentUser, unreadByChat.getOrDefault(chat.getId(), 0L)))
+                .collect(Collectors.toList());
+    }
 
+    private ChatDto toChatDto(Chat chat, User currentUser, Long unreadCount) {
         // Determine the other participant
         User otherParticipant = chat.getCustomer().getId().equals(currentUser.getId())
                 ? chat.getTechnician()
                 : chat.getCustomer();
-
-        // Get unread count for current user
-        Long unreadCount = chatRepository.countUnreadMessagesInChat(chat.getId(), currentUser.getId());
 
         return ChatDto.builder()
                 .id(chat.getId())
