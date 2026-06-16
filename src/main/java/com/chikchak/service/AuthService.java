@@ -11,6 +11,7 @@ import com.chikchak.repository.TechnicianProfileRepository;
 import com.chikchak.repository.UserRepository;
 import com.chikchak.security.CustomUserDetails;
 import com.chikchak.security.JwtTokenProvider;
+import com.chikchak.security.UserAuthCache;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
+    private final UserAuthCache userAuthCache;
 
     public AuthResponse login(LoginRequest loginRequest) {
         try {
@@ -188,8 +190,12 @@ public class AuthService {
     }
 
     public UserDto updateProfile(UpdateProfileRequest request) {
-        User user = getCurrentUserEntity();
-        
+        // Re-load a managed entity: the current user from the security context may be a
+        // short-TTL cached (detached) instance shared across requests, so it must not be
+        // mutated/saved directly.
+        User user = userRepository.findById(getCurrentUserEntity().getId())
+                .orElseThrow(() -> new ChikChakException("User not authenticated"));
+
         if (request.getFullName() != null) {
             user.setFullName(request.getFullName());
         }
@@ -213,30 +219,35 @@ public class AuthService {
         }
 
         user = userRepository.save(user);
+        userAuthCache.evict(user.getEmail());
         log.info("Profile updated for user: {}", user.getEmail());
-        
+
         return userMapper.toDto(user);
     }
 
     public UserDto updateProfileImage(UpdateProfileImageRequest request) {
-        User user = getCurrentUserEntity();
+        User user = userRepository.findById(getCurrentUserEntity().getId())
+                .orElseThrow(() -> new ChikChakException("User not authenticated"));
 
         user.setProfileImageUrl(request.getProfileImageUrl());
         user = userRepository.save(user);
+        userAuthCache.evict(user.getEmail());
         log.info("Profile image updated for user: {}", user.getEmail());
 
         return userMapper.toDto(user);
     }
 
     public void changePassword(String currentPassword, String newPassword) {
-        User user = getCurrentUserEntity();
-        
+        User user = userRepository.findById(getCurrentUserEntity().getId())
+                .orElseThrow(() -> new ChikChakException("User not authenticated"));
+
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new ChikChakException("Current password is incorrect");
         }
-        
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        userAuthCache.evict(user.getEmail());
 
         log.info("Password changed for user: {}", user.getEmail());
     }
@@ -279,6 +290,7 @@ public class AuthService {
         User user = users.get(0);
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+        userAuthCache.evict(user.getEmail());
 
         // Log without the token or password
         log.info("Password reset successful for user id {}", user.getId());
@@ -297,7 +309,10 @@ public class AuthService {
      * sees the cancellation and can rebook with someone else.
      */
     public void deleteAccount() {
-        User user = getCurrentUserEntity();
+        // Re-load a managed entity so lazy associations (technicianProfile) initialize within
+        // this transaction and the anonymization below applies to a session-attached instance.
+        User user = userRepository.findById(getCurrentUserEntity().getId())
+                .orElseThrow(() -> new ChikChakException("User not authenticated"));
 
         // Admins manage other accounts; they must not self-delete through this endpoint
         if (user.getRole() == UserRole.ADMIN) {
@@ -338,6 +353,8 @@ public class AuthService {
         }
 
         userRepository.save(user);
+        // Drop the cached auth entry so the now-DELETED account stops authenticating immediately
+        userAuthCache.evict(originalEmail);
 
         // Stop all push notifications to this user's devices
         deviceTokenRepository.deleteByUserId(user.getId());

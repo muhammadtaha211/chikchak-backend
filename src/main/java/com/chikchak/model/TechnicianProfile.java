@@ -11,7 +11,10 @@ import java.util.List;
 
 // Technician Profile Entity
 @Entity
-@Table(name = "technician_profiles")
+@Table(name = "technician_profiles", indexes = {
+        @Index(name = "idx_tech_profiles_user", columnList = "user_id"),
+        @Index(name = "idx_tech_profiles_type_verified_avail", columnList = "service_type, is_verified, is_available")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

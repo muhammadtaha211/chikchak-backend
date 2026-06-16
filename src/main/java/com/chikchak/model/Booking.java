@@ -12,7 +12,13 @@ import java.util.List;
 
 // Booking Entity
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+        @Index(name = "idx_bookings_customer_status", columnList = "customer_id, status"),
+        @Index(name = "idx_bookings_technician_status", columnList = "technician_id, status"),
+        @Index(name = "idx_bookings_customer_created", columnList = "customer_id, created_at"),
+        @Index(name = "idx_bookings_technician_status_created", columnList = "technician_id, status, created_at"),
+        @Index(name = "idx_bookings_status_arrival", columnList = "status, arrival_marked_at")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

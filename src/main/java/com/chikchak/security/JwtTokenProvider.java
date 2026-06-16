@@ -38,39 +38,32 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parser()
+    // Parse and signature-verify the token once, returning all claims. Callers that need several
+    // claims (e.g. the auth filter) should call this once instead of the per-claim helpers, each
+    // of which re-parses and re-verifies the signature.
+    public Claims getClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return claims.getSubject();
+    }
+
+    public String getEmailFromToken(String token) {
+        return getClaims(token).getSubject();
     }
 
     public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return claims.get("userId", Long.class);
+        return getClaims(token).get("userId", Long.class);
     }
 
     public String getRoleFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return claims.get("role", String.class);
+        return getClaims(token).get("role", String.class);
     }
 
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(authToken);
+            getClaims(authToken);
             return true;
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token");

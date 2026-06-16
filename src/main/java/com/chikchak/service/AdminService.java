@@ -10,6 +10,7 @@ import com.chikchak.repository.AdminActionLogRepository;
 import com.chikchak.repository.BookingRepository;
 import com.chikchak.repository.TechnicianProfileRepository;
 import com.chikchak.repository.UserRepository;
+import com.chikchak.security.UserAuthCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,7 @@ public class AdminService {
     private final UserMapper userMapper;
     private final BookingMapper bookingMapper;
     private final AdminActionLogMapper adminActionLogMapper;
+    private final UserAuthCache userAuthCache;
 
     // ─── Technician approval ─────────────────────────────────────────────
 
@@ -122,6 +124,8 @@ public class AdminService {
 
         user.setStatus(UserStatus.SUSPENDED);
         user = userRepository.save(user);
+        // Drop any cached auth entry so the suspension takes effect on the next request
+        userAuthCache.evict(user.getEmail());
 
         logAction(AdminActionType.USER_SUSPENDED, TARGET_USER, userId, reason);
 
@@ -139,6 +143,8 @@ public class AdminService {
 
         user.setStatus(UserStatus.ACTIVE);
         user = userRepository.save(user);
+        // Drop the cached (suspended) auth entry so the user can authenticate again immediately
+        userAuthCache.evict(user.getEmail());
 
         logAction(AdminActionType.USER_REACTIVATED, TARGET_USER, userId, null);
 

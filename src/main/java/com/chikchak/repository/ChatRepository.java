@@ -12,12 +12,32 @@ import java.util.Optional;
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Long> {
 
-    // Find all chats for a user (as customer or technician)
-    @Query("SELECT c FROM Chat c WHERE c.customer.id = :userId OR c.technician.id = :userId ORDER BY c.lastMessageAt DESC")
+    // Find all chats for a user (as customer or technician).
+    // Fetch-joins every to-one association the chat-list DTO mapping reads (participants and,
+    // when present, the booking's customer + technician + technician.user) so building the list
+    // is a single query instead of several lazy loads per chat. All joins are to-one, so there
+    // is no row multiplication.
+    @Query("SELECT c FROM Chat c " +
+           "JOIN FETCH c.customer " +
+           "JOIN FETCH c.technician " +
+           "LEFT JOIN FETCH c.booking b " +
+           "LEFT JOIN FETCH b.customer " +
+           "LEFT JOIN FETCH b.technician bt " +
+           "LEFT JOIN FETCH bt.user " +
+           "WHERE c.customer.id = :userId OR c.technician.id = :userId " +
+           "ORDER BY c.lastMessageAt DESC")
     List<Chat> findChatsForUser(@Param("userId") Long userId);
 
-    // Find active chats for a user
-    @Query("SELECT c FROM Chat c WHERE (c.customer.id = :userId OR c.technician.id = :userId) ORDER BY c.lastMessageAt DESC")
+    // Find active chats for a user (same projection as findChatsForUser)
+    @Query("SELECT c FROM Chat c " +
+           "JOIN FETCH c.customer " +
+           "JOIN FETCH c.technician " +
+           "LEFT JOIN FETCH c.booking b " +
+           "LEFT JOIN FETCH b.customer " +
+           "LEFT JOIN FETCH b.technician bt " +
+           "LEFT JOIN FETCH bt.user " +
+           "WHERE (c.customer.id = :userId OR c.technician.id = :userId) " +
+           "ORDER BY c.lastMessageAt DESC")
     List<Chat> findActiveChatsForUser(@Param("userId") Long userId);
 
     // Find chat between specific customer and technician
@@ -49,4 +69,15 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
            "GROUP BY cm.chat.booking.id")
     List<Object[]> countUnreadMessagesByBookingIds(@Param("bookingIds") List<Long> bookingIds,
                                                    @Param("userId") Long userId);
+
+    // Batched unread counts keyed by chat id — one query for a whole chat list instead of one
+    // COUNT per chat (the chat-list N+1). Returns [chatId, count] rows.
+    @Query("SELECT cm.chat.id, COUNT(cm) FROM ChatMessage cm " +
+           "WHERE cm.chat.id IN :chatIds " +
+           "AND cm.sender IS NOT NULL " +
+           "AND cm.sender.id != :userId " +
+           "AND cm.isRead = false " +
+           "GROUP BY cm.chat.id")
+    List<Object[]> countUnreadMessagesByChatIds(@Param("chatIds") List<Long> chatIds,
+                                                @Param("userId") Long userId);
 }

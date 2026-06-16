@@ -28,6 +28,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByTechnicianIdAndStatus(Long technicianId, BookingStatus status);
 
+    // Customer dashboard totals — count in the database instead of loading the whole booking
+    // history into memory just to size it.
+    long countByCustomerId(Long customerId);
+
+    long countByCustomerIdAndStatus(Long customerId, BookingStatus status);
+
     @Query("SELECT b FROM Booking b WHERE b.customer.id = :customerId ORDER BY b.createdAt DESC")
     Page<Booking> findByCustomerIdOrderByCreatedAtDesc(@Param("customerId") Long customerId, Pageable pageable);
 
@@ -68,6 +74,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.technician.id = :technicianId AND b.status = 'TIME_DISCUSSION'")
     Long countTimeDiscussionForTechnician(@Param("technicianId") Long technicianId);
+
+    // Technician badge counts in a single grouped query instead of one COUNT per status.
+    // Returns [status, count] rows for the requested statuses.
+    @Query("SELECT b.status, COUNT(b) FROM Booking b " +
+           "WHERE b.technician.id = :technicianId AND b.status IN :statuses " +
+           "GROUP BY b.status")
+    List<Object[]> countByTechnicianIdGroupedByStatus(@Param("technicianId") Long technicianId,
+                                                       @Param("statuses") List<BookingStatus> statuses);
 
     @Query("SELECT b FROM Booking b WHERE b.createdAt BETWEEN :startDate AND :endDate")
     List<Booking> findBookingsInDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);

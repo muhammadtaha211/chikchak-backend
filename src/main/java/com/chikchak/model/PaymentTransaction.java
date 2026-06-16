@@ -11,7 +11,10 @@ import java.time.LocalDateTime;
 
 // Payment Transaction Entity
 @Entity
-@Table(name = "payment_transactions")
+@Table(name = "payment_transactions", indexes = {
+        @Index(name = "idx_payment_tx_user_status_type", columnList = "user_id, status, transaction_type"),
+        @Index(name = "idx_payment_tx_booking", columnList = "booking_id")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
