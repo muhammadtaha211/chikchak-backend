@@ -120,6 +120,12 @@
             <version>8.10.1</version>
         </dependency>
 
+        <!-- In-memory cache with TTL eviction for rate-limit buckets (version managed by Spring Boot BOM) -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- Firebase Cloud Messaging -->
         <dependency>
             <groupId>com.google.firebase</groupId>
