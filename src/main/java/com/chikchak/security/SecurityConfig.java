@@ -53,9 +53,9 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll() // WebSocket endpoint
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // Public legal pages (Google Play account-deletion + privacy policy) —
+                        // Public legal pages (Google Play account-deletion + privacy policy + terms) —
                         // must be reachable without login
-                        .requestMatchers("/delete-account.html", "/privacy-policy.html").permitAll()
+                        .requestMatchers("/delete-account.html", "/privacy-policy.html", "/terms-of-service.html").permitAll()
 
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
