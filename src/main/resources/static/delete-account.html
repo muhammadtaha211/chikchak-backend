@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Delete Your Takin Account &amp; Data</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --ink: #1c2733;
+      --muted: #5b6b7b;
+      --line: #e2e8f0;
+      --brand: #0e7c66;
+      --brand-dark: #0a5e4d;
+      --danger: #b3261e;
+      --ok: #0e7c66;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .brand .dot {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--brand); color: #fff; font-weight: 700;
+      display: grid; place-items: center; font-size: 18px;
+    }
+    .brand strong { font-size: 20px; letter-spacing: .2px; }
+    h1 { font-size: 26px; margin: 0 0 8px; }
+    h2 { font-size: 18px; margin: 28px 0 10px; }
+    p { margin: 0 0 14px; }
+    .lead { color: var(--muted); font-size: 16px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 22px 22px 6px; margin-top: 18px;
+    }
+    ul { margin: 6px 0 14px; padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    .muted { color: var(--muted); }
+    .pill {
+      display: inline-block; background: #eaf5f1; color: var(--brand-dark);
+      border-radius: 999px; padding: 3px 12px; font-size: 13px; font-weight: 600;
+      margin-bottom: 14px;
+    }
+    label { display: block; font-weight: 600; margin: 14px 0 6px; font-size: 14px; }
+    .req { color: var(--danger); }
+    input[type="text"], input[type="email"], input[type="tel"], textarea {
+      width: 100%; padding: 11px 12px; border: 1px solid var(--line);
+      border-radius: 10px; font-size: 15px; font-family: inherit; color: var(--ink);
+      background: #fff;
+    }
+    input:focus, textarea:focus { outline: 2px solid var(--brand); border-color: var(--brand); }
+    textarea { resize: vertical; min-height: 84px; }
+    .check { display: flex; gap: 10px; align-items: flex-start; margin: 18px 0 6px; }
+    .check input { margin-top: 5px; }
+    .check label { font-weight: 500; margin: 0; font-size: 14px; }
+    button {
+      margin-top: 18px; width: 100%; padding: 13px 16px; border: 0;
+      background: var(--brand); color: #fff; font-size: 16px; font-weight: 600;
+      border-radius: 10px; cursor: pointer;
+    }
+    button:hover { background: var(--brand-dark); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    .msg { margin-top: 16px; padding: 14px 16px; border-radius: 10px; font-size: 15px; display: none; }
+    .msg.show { display: block; }
+    .msg.ok { background: #e7f5ef; color: var(--brand-dark); border: 1px solid #bfe3d6; }
+    .msg.err { background: #fdeceb; color: var(--danger); border: 1px solid #f3c9c6; }
+    a { color: var(--brand-dark); }
+    footer { margin-top: 36px; font-size: 13px; color: var(--muted); }
+    .fallback { font-size: 14px; color: var(--muted); margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">
+      <span class="dot">T</span>
+      <strong>Takin</strong>
+    </div>
+
+    <span class="pill">Account &amp; data deletion</span>
+    <h1>Delete your Takin account and data</h1>
+    <p class="lead">
+      You can ask us to permanently delete your Takin account and personal data here —
+      without signing in or reinstalling the app. Fill in the form below and we'll take care of it.
+    </p>
+
+    <div class="card">
+      <h2>What gets deleted</h2>
+      <p class="muted">When your request is processed, we permanently erase or anonymize:</p>
+      <ul>
+        <li>Your name, email address and phone number</li>
+        <li>Your home address, city and saved GPS location</li>
+        <li>Your profile photo</li>
+        <li>Your push-notification device tokens</li>
+        <li>Your account credit balance</li>
+        <li>Any active or pending bookings you have</li>
+      </ul>
+      <p class="muted">Your account is permanently closed and can no longer be used to sign in.</p>
+
+      <h2>What we keep, and why</h2>
+      <p class="muted">
+        Records of completed jobs and their amounts/fees, plus any ratings or reviews, are kept in
+        <strong>anonymized</strong> form — no longer linked to your identity — for up to
+        <strong>7 years</strong> to meet tax, accounting and legal obligations. They are deleted
+        once that period ends. Note: Takin does not collect or store payment-card details; jobs are
+        paid in cash directly between you and the technician.
+      </p>
+
+      <h2>How long it takes</h2>
+      <p class="muted">
+        We process deletion requests within <strong>30 days</strong> and email you a confirmation
+        once it's done.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Request deletion</h2>
+      <form id="form" novalidate>
+        <label for="fullName">Full name <span class="muted">(optional)</span></label>
+        <input type="text" id="fullName" name="fullName" autocomplete="name" maxlength="100" />
+
+        <label for="email">Email used in the app <span class="req">*</span></label>
+        <input type="email" id="email" name="email" autocomplete="email" maxlength="254" required />
+
+        <label for="phoneNumber">Phone number <span class="muted">(optional)</span></label>
+        <input type="tel" id="phoneNumber" name="phoneNumber" autocomplete="tel" maxlength="30" />
+
+        <label for="reason">Reason <span class="muted">(optional)</span></label>
+        <textarea id="reason" name="reason" maxlength="1000"></textarea>
+
+        <!-- Honeypot: hidden from people, ignored by humans, filled by bots -->
+        <div class="hp" aria-hidden="true">
+          <label for="website">Website</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <div class="check">
+          <input type="checkbox" id="confirm" name="confirm" />
+          <label for="confirm">
+            I understand this will permanently delete my Takin account and that it cannot be undone.
+          </label>
+        </div>
+
+        <button type="submit" id="submitBtn">Request account deletion</button>
+      </form>
+
+      <div class="msg ok" id="okMsg"></div>
+      <div class="msg err" id="errMsg"></div>
+
+      <p class="fallback">
+        Prefer email? Write to
+        <a href="mailto:mogames211211@gmail.com?subject=Delete%20my%20account">mogames211211@gmail.com</a>
+        with the subject "Delete my account".
+      </p>
+    </div>
+
+    <footer>
+      <p>
+        See our <a href="/privacy-policy.html">Privacy Policy</a> for full details on the data we
+        collect, how it's used, and your rights.
+      </p>
+      <p>&copy; <span id="year"></span> Takin</p>
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    var form = document.getElementById('form');
+    var btn = document.getElementById('submitBtn');
+    var okMsg = document.getElementById('okMsg');
+    var errMsg = document.getElementById('errMsg');
+
+    function show(el, text) { el.textContent = text; el.classList.add('show'); }
+    function hide(el) { el.classList.remove('show'); }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      hide(okMsg); hide(errMsg);
+
+      var email = document.getElementById('email').value.trim();
+      var confirmed = document.getElementById('confirm').checked;
+
+      if (!email) { show(errMsg, 'Please enter the email address you used in the app.'); return; }
+      if (!confirmed) { show(errMsg, 'Please tick the box to confirm you understand this is permanent.'); return; }
+
+      var payload = {
+        email: email,
+        fullName: document.getElementById('fullName').value.trim() || null,
+        phoneNumber: document.getElementById('phoneNumber').value.trim() || null,
+        reason: document.getElementById('reason').value.trim() || null,
+        website: document.getElementById('website').value
+      };
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+
+      fetch('/api/public/account-deletion-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (res) {
+        if (res.ok) {
+          form.style.display = 'none';
+          show(okMsg, 'Thank you. Your deletion request has been received. We will process it within 30 days and email you a confirmation.');
+        } else if (res.status === 429) {
+          show(errMsg, 'Too many requests right now. Please wait a minute and try again, or email us instead.');
+          btn.disabled = false; btn.textContent = 'Request account deletion';
+        } else {
+          show(errMsg, 'Something went wrong submitting your request. Please email mogames211211@gmail.com with the subject "Delete my account".');
+          btn.disabled = false; btn.textContent = 'Request account deletion';
+        }
+      }).catch(function () {
+        show(errMsg, 'We could not reach the server. Please email mogames211211@gmail.com with the subject "Delete my account".');
+        btn.disabled = false; btn.textContent = 'Request account deletion';
+      });
+    });
+  </script>
+</body>
+</html>

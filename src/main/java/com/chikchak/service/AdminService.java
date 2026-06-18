@@ -6,6 +6,7 @@ import com.chikchak.mapper.AdminActionLogMapper;
 import com.chikchak.mapper.BookingMapper;
 import com.chikchak.mapper.UserMapper;
 import com.chikchak.model.*;
+import com.chikchak.repository.AccountDeletionRequestRepository;
 import com.chikchak.repository.AdminActionLogRepository;
 import com.chikchak.repository.BookingRepository;
 import com.chikchak.repository.TechnicianProfileRepository;
@@ -13,10 +14,12 @@ import com.chikchak.repository.UserRepository;
 import com.chikchak.security.UserAuthCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final AdminActionLogRepository adminActionLogRepository;
+    private final AccountDeletionRequestRepository deletionRequestRepository;
     private final AuthService authService;
     private final BookingService bookingService;
     private final UserMapper userMapper;
@@ -196,6 +200,50 @@ public class AdminService {
         return result;
     }
 
+    // ─── Account deletion requests ───────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<DeletionRequestDto> getDeletionRequests(DeletionRequestStatus status, Pageable pageable) {
+        Page<AccountDeletionRequest> requests = (status == null)
+                ? deletionRequestRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : deletionRequestRepository.findByStatusOrderByCreatedAtAsc(status, pageable);
+        return requests.getContent().stream()
+                .map(this::toDeletionDto)
+                .collect(Collectors.toList());
+    }
+
+    // Fulfills a request: anonymizes the matching account (reusing AuthService) and marks it PROCESSED.
+    public DeletionRequestDto processDeletionRequest(Long requestId) {
+        AccountDeletionRequest request = findDeletionRequestById(requestId);
+        requirePending(request);
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ChikChakException("No account found for " + request.getEmail()));
+
+        authService.performAccountDeletion(user);
+
+        markResolved(request, DeletionRequestStatus.PROCESSED);
+        logAction(AdminActionType.USER_DELETED, TARGET_USER, user.getId(),
+                "Fulfilled deletion request #" + requestId + " for " + request.getEmail());
+
+        log.info("Deletion request #{} processed: user id {} anonymized", requestId, user.getId());
+
+        return toDeletionDto(request);
+    }
+
+    // Dismisses a request (e.g. spam or no matching account) without touching any account.
+    public DeletionRequestDto rejectDeletionRequest(Long requestId, String reason) {
+        AccountDeletionRequest request = findDeletionRequestById(requestId);
+        requirePending(request);
+
+        markResolved(request, DeletionRequestStatus.REJECTED);
+        logAction(AdminActionType.DELETION_REQUEST_REJECTED, TARGET_USER, requestId, reason);
+
+        log.info("Deletion request #{} rejected. Reason: {}", requestId, reason);
+
+        return toDeletionDto(request);
+    }
+
     // ─── Audit log ───────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -227,6 +275,39 @@ public class AdminService {
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ChikChakException("User not found"));
+    }
+
+    private AccountDeletionRequest findDeletionRequestById(Long requestId) {
+        return deletionRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ChikChakException("Deletion request not found"));
+    }
+
+    private void requirePending(AccountDeletionRequest request) {
+        if (request.getStatus() != DeletionRequestStatus.PENDING) {
+            throw new ChikChakException("Deletion request has already been "
+                    + request.getStatus().name().toLowerCase());
+        }
+    }
+
+    private void markResolved(AccountDeletionRequest request, DeletionRequestStatus status) {
+        request.setStatus(status);
+        request.setProcessedAt(LocalDateTime.now());
+        request.setProcessedBy(authService.getCurrentUserEntity().getEmail());
+        deletionRequestRepository.save(request);
+    }
+
+    private DeletionRequestDto toDeletionDto(AccountDeletionRequest request) {
+        return DeletionRequestDto.builder()
+                .id(request.getId())
+                .email(request.getEmail())
+                .fullName(request.getFullName())
+                .phoneNumber(request.getPhoneNumber())
+                .reason(request.getReason())
+                .status(request.getStatus())
+                .requestedAt(request.getCreatedAt())
+                .processedAt(request.getProcessedAt())
+                .processedBy(request.getProcessedBy())
+                .build();
     }
 
     // Queries require a non-null search term; empty string matches all rows
