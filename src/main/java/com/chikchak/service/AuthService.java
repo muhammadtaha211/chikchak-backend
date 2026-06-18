@@ -313,10 +313,18 @@ public class AuthService {
         // this transaction and the anonymization below applies to a session-attached instance.
         User user = userRepository.findById(getCurrentUserEntity().getId())
                 .orElseThrow(() -> new ChikChakException("User not authenticated"));
+        performAccountDeletion(user);
+    }
 
-        // Admins manage other accounts; they must not self-delete through this endpoint
+    /**
+     * Shared soft-delete + anonymization, used both by the self-service endpoint above and by an
+     * admin fulfilling a deletion request received through the public web form
+     * (see AdminService.processDeletionRequest). The caller supplies a managed User.
+     */
+    public void performAccountDeletion(User user) {
+        // Admins manage other accounts; they are never removed through the deletion flow
         if (user.getRole() == UserRole.ADMIN) {
-            throw new ChikChakException("Admin accounts cannot be deleted through this endpoint");
+            throw new ChikChakException("Admin accounts cannot be deleted");
         }
 
         // Resolve in-flight bookings before scrubbing the account

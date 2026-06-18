@@ -2,6 +2,7 @@ package com.chikchak.controller;
 
 import com.chikchak.dto.*;
 import com.chikchak.model.BookingStatus;
+import com.chikchak.model.DeletionRequestStatus;
 import com.chikchak.model.UserRole;
 import com.chikchak.model.UserStatus;
 import com.chikchak.service.AdminService;
@@ -142,6 +143,37 @@ public class AdminController {
             @Valid @RequestBody BookingUpdateRequest request) {
         BookingDto booking = adminService.forceBookingStatus(id, request.getStatus(), request.getReason());
         return ResponseEntity.ok(ApiResponse.success("Booking status updated", booking));
+    }
+
+    // ─── Account deletion requests ───────────────────────────────────────
+
+    @GetMapping("/deletion-requests")
+    @Operation(summary = "List deletion requests",
+            description = "Account-deletion requests submitted via the public page, optionally filtered by status (oldest-first when filtered, e.g. status=PENDING)")
+    public ResponseEntity<ApiResponse<List<DeletionRequestDto>>> getDeletionRequests(
+            @RequestParam(required = false) DeletionRequestStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<DeletionRequestDto> requests = adminService.getDeletionRequests(status, PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(requests));
+    }
+
+    @PostMapping("/deletion-requests/{id}/process")
+    @Operation(summary = "Process deletion request",
+            description = "Anonymize/delete the account matching this request and mark it PROCESSED")
+    public ResponseEntity<ApiResponse<DeletionRequestDto>> processDeletionRequest(@PathVariable Long id) {
+        DeletionRequestDto result = adminService.processDeletionRequest(id);
+        return ResponseEntity.ok(ApiResponse.success("Deletion request processed", result));
+    }
+
+    @PostMapping("/deletion-requests/{id}/reject")
+    @Operation(summary = "Reject deletion request",
+            description = "Mark a request REJECTED without deleting any account (e.g. spam or no matching account)")
+    public ResponseEntity<ApiResponse<DeletionRequestDto>> rejectDeletionRequest(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) AdminReasonRequest request) {
+        DeletionRequestDto result = adminService.rejectDeletionRequest(id, reasonOf(request));
+        return ResponseEntity.ok(ApiResponse.success("Deletion request rejected", result));
     }
 
     // ─── Audit log ───────────────────────────────────────────────────────
