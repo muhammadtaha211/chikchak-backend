@@ -63,6 +63,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.technician.id = :technicianId AND b.status IN ('PENDING', 'TECHNICIAN_NOTIFIED', 'TIME_DISCUSSION', 'ACCEPTED', 'SCHEDULED', 'ON_THE_WAY', 'ARRIVED', 'IN_PROGRESS', 'ASSESSMENT_COMPLETE')")
     List<Booking> findNonTerminalBookingsForTechnician(@Param("technicianId") Long technicianId);
 
+    // Non-terminal bookings between two users (one the customer, the other the technician's user),
+    // in either arrangement. DISPUTED is excluded so blocking can't short-circuit dispute resolution.
+    // Used to auto-cancel active bookings when one party blocks the other.
+    @Query("SELECT b FROM Booking b WHERE b.status NOT IN ('CANCELLED', 'COMPLETED', 'DISPUTED') " +
+            "AND ((b.customer.id = :a AND b.technician.user.id = :b) " +
+            "OR (b.customer.id = :b AND b.technician.user.id = :a))")
+    List<Booking> findActiveBookingsBetweenUsers(@Param("a") Long a, @Param("b") Long b);
+
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.technician.id = :technicianId AND b.status = 'COMPLETED'")
     Long countCompletedBookingsByTechnicianId(@Param("technicianId") Long technicianId);
 

@@ -41,6 +41,7 @@ public class BookingService {
     private final PricingService pricingService;
     private final ChatService chatService;
     private final ChatRepository chatRepository;
+    private final UserBlockRepository userBlockRepository;
 
     @Value("${chikchak.service-fee:20}")
     private BigDecimal serviceFee;
@@ -107,6 +108,11 @@ public class BookingService {
         // Get the selected technician
         TechnicianProfile selectedTechnician = technicianProfileRepository.findById(request.getSelectedTechnicianId())
                 .orElseThrow(() -> new ChikChakException("Selected technician not found"));
+
+        // Don't allow booking a technician you've blocked (or who has blocked you)
+        if (userBlockRepository.existsBlockBetween(customer.getId(), selectedTechnician.getUser().getId())) {
+            throw new ChikChakException("You can't book a technician you've blocked.");
+        }
 
         // Verify technician is available and verified
         if (!selectedTechnician.getIsVerified()) {
@@ -205,6 +211,23 @@ public class BookingService {
         BookingDto dto = bookingMapper.toDto(booking);
         populateUnreadCount(dto, customer.getId());
         return dto;
+    }
+
+    // Auto-cancel any active booking(s) between two users when one blocks the other.
+    // Payment/refund is dead code in this app, so we only flip the status — no refund is initiated.
+    public void cancelActiveBookingsDueToBlock(Long userAId, Long userBId) {
+        for (Booking booking : bookingRepository.findActiveBookingsBetweenUsers(userAId, userBId)) {
+            BookingStatus oldStatus = booking.getStatus();
+            booking.setStatus(BookingStatus.CANCELLED);
+            booking.setCancelledDatetime(LocalDateTime.now());
+            bookingRepository.save(booking);
+
+            createStatusHistory(booking, oldStatus, BookingStatus.CANCELLED, "Cancelled — user blocked");
+            notificationService.notifyBookingCancellation(booking);
+
+            log.info("Booking {} auto-cancelled due to block between users {} and {}",
+                    booking.getBookingNumber(), userAId, userBId);
+        }
     }
 
     // UPDATED METHOD: Technician responds to booking

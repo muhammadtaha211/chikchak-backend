@@ -3,6 +3,7 @@ package com.chikchak.controller;
 import com.chikchak.dto.*;
 import com.chikchak.model.BookingStatus;
 import com.chikchak.model.DeletionRequestStatus;
+import com.chikchak.model.ReportStatus;
 import com.chikchak.model.UserRole;
 import com.chikchak.model.UserStatus;
 import com.chikchak.service.AdminService;
@@ -174,6 +175,38 @@ public class AdminController {
             @Valid @RequestBody(required = false) AdminReasonRequest request) {
         DeletionRequestDto result = adminService.rejectDeletionRequest(id, reasonOf(request));
         return ResponseEntity.ok(ApiResponse.success("Deletion request rejected", result));
+    }
+
+    // ─── Content reports / moderation ────────────────────────────────────
+
+    @GetMapping("/reports")
+    @Operation(summary = "List content reports",
+            description = "User-submitted reports of users/content, optionally filtered by status (oldest-first when filtered, e.g. status=OPEN)")
+    public ResponseEntity<ApiResponse<List<ReportDto>>> getReports(
+            @RequestParam(required = false) ReportStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<ReportDto> reports = adminService.getReports(status, PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(reports));
+    }
+
+    @PostMapping("/reports/{id}/dismiss")
+    @Operation(summary = "Dismiss report", description = "Mark a report reviewed with no action taken")
+    public ResponseEntity<ApiResponse<ReportDto>> dismissReport(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) AdminReasonRequest request) {
+        ReportDto report = adminService.dismissReport(id, reasonOf(request));
+        return ResponseEntity.ok(ApiResponse.success("Report dismissed", report));
+    }
+
+    @PostMapping("/reports/{id}/remove-content")
+    @Operation(summary = "Remove reported content",
+            description = "Remove the reported chat message and/or rating comment and mark the report actioned. To also ban the user, call /users/{id}/suspend")
+    public ResponseEntity<ApiResponse<ReportDto>> removeReportedContent(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) AdminReasonRequest request) {
+        ReportDto report = adminService.removeReportedContent(id, reasonOf(request));
+        return ResponseEntity.ok(ApiResponse.success("Reported content removed", report));
     }
 
     // ─── Audit log ───────────────────────────────────────────────────────

@@ -11,7 +11,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +28,7 @@ public class TechnicianService {
     private final AuthService authService;
     private final UserMapper userMapper;
     private final PricingService pricingService;
+    private final UserBlockRepository userBlockRepository;
 
     public TechnicianSearchResponse searchTechnicians(TechnicianSearchRequest request) {
         List<TechnicianProfile> technicians;
@@ -42,9 +45,13 @@ public class TechnicianService {
             technicians = technicianProfileRepository.findByIsVerifiedAndIsAvailable(true, true);
         }
 
+        // Hide technicians the current user has blocked (or who have blocked them), either direction
+        Long meId = authService.getCurrentUserEntity().getId();
+        Set<Long> blockedRelated = new HashSet<>(userBlockRepository.findRelatedUserIds(meId));
+
         // Apply filters
         List<TechnicianProfileDto> technicianDtos = technicians.stream()
-                .filter(t -> applyFilters(t, request))
+                .filter(t -> applyFilters(t, request) && !blockedRelated.contains(t.getUser().getId()))
                 .map(t -> {
                     TechnicianProfileDto dto = userMapper.toDto(t);
                     if (request.getLatitude() != null && request.getLongitude() != null) {
