@@ -13,6 +13,7 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import PeopleIcon from '@mui/icons-material/People';
 import EventNoteIcon from '@mui/icons-material/EventNote';
+import FlagIcon from '@mui/icons-material/Flag';
 import HistoryIcon from '@mui/icons-material/History';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../auth';
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { label: 'All Technicians', path: '/technicians', icon: <EngineeringIcon /> },
   { label: 'Users', path: '/users', icon: <PeopleIcon /> },
   { label: 'Bookings', path: '/bookings', icon: <EventNoteIcon /> },
+  { label: 'Content Reports', path: '/reports', icon: <FlagIcon /> },
   { label: 'Audit Log', path: '/logs', icon: <HistoryIcon /> },
 ];
 

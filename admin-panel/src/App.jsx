@@ -6,6 +6,7 @@ import PendingTechniciansPage from './pages/PendingTechniciansPage';
 import TechniciansPage from './pages/TechniciansPage';
 import UsersPage from './pages/UsersPage';
 import BookingsPage from './pages/BookingsPage';
+import ReportsPage from './pages/ReportsPage';
 import LogsPage from './pages/LogsPage';
 
 // Everything except /login requires a logged-in admin.
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/technicians" element={<TechniciansPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/bookings" element={<BookingsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/logs" element={<LogsPage />} />
         <Route path="*" element={<Navigate to="/technicians/pending" replace />} />
       </Route>

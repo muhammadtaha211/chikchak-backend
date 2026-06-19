@@ -9,6 +9,9 @@ import com.chikchak.model.*;
 import com.chikchak.repository.AccountDeletionRequestRepository;
 import com.chikchak.repository.AdminActionLogRepository;
 import com.chikchak.repository.BookingRepository;
+import com.chikchak.repository.ChatMessageRepository;
+import com.chikchak.repository.ContentReportRepository;
+import com.chikchak.repository.RatingRepository;
 import com.chikchak.repository.TechnicianProfileRepository;
 import com.chikchak.repository.UserRepository;
 import com.chikchak.security.UserAuthCache;
@@ -32,12 +35,16 @@ public class AdminService {
     private static final String TARGET_TECHNICIAN = "TECHNICIAN";
     private static final String TARGET_USER = "USER";
     private static final String TARGET_BOOKING = "BOOKING";
+    private static final String TARGET_REPORT = "CONTENT_REPORT";
 
     private final TechnicianProfileRepository technicianProfileRepository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final AdminActionLogRepository adminActionLogRepository;
     private final AccountDeletionRequestRepository deletionRequestRepository;
+    private final ContentReportRepository contentReportRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final RatingRepository ratingRepository;
     private final AuthService authService;
     private final BookingService bookingService;
     private final UserMapper userMapper;
@@ -244,6 +251,58 @@ public class AdminService {
         return toDeletionDto(request);
     }
 
+    // ─── Content reports / moderation ────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<ReportDto> getReports(ReportStatus status, Pageable pageable) {
+        Page<ContentReport> reports = (status == null)
+                ? contentReportRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : contentReportRepository.findByStatusOrderByCreatedAtAsc(status, pageable);
+        return reports.getContent().stream()
+                .map(this::toReportDto)
+                .collect(Collectors.toList());
+    }
+
+    // Reviewed, no action needed.
+    public ReportDto dismissReport(Long reportId, String reason) {
+        ContentReport report = findReportById(reportId);
+        requireOpen(report);
+
+        markReportResolved(report, ReportStatus.DISMISSED, reason);
+        logAction(AdminActionType.CONTENT_REPORT_DISMISSED, TARGET_REPORT, reportId, reason);
+
+        log.info("Content report #{} dismissed. Reason: {}", reportId, reason);
+        return toReportDto(report);
+    }
+
+    // Removes the offending content referenced by the report: a chat message is replaced with a
+    // tombstone (any image attachment dropped), a rating's comment is cleared.
+    public ReportDto removeReportedContent(Long reportId, String reason) {
+        ContentReport report = findReportById(reportId);
+        requireOpen(report);
+
+        if (report.getChatMessageId() != null) {
+            chatMessageRepository.findById(report.getChatMessageId()).ifPresent(message -> {
+                message.setMessage("[Removed by moderator]");
+                message.setAttachmentUrl(null);
+                message.setMessageType(MessageType.TEXT);
+                chatMessageRepository.save(message);
+            });
+        }
+        if (report.getRatingId() != null) {
+            ratingRepository.findById(report.getRatingId()).ifPresent(rating -> {
+                rating.setComment(null);
+                ratingRepository.save(rating);
+            });
+        }
+
+        markReportResolved(report, ReportStatus.ACTIONED, reason);
+        logAction(AdminActionType.REPORTED_CONTENT_REMOVED, TARGET_REPORT, reportId, reason);
+
+        log.info("Content removed for report #{}. Reason: {}", reportId, reason);
+        return toReportDto(report);
+    }
+
     // ─── Audit log ───────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -265,6 +324,43 @@ public class AdminService {
                 .targetId(targetId)
                 .details(details)
                 .build());
+    }
+
+    private ContentReport findReportById(Long reportId) {
+        return contentReportRepository.findById(reportId)
+                .orElseThrow(() -> new ChikChakException("Report not found"));
+    }
+
+    private void requireOpen(ContentReport report) {
+        if (report.getStatus() != ReportStatus.OPEN) {
+            throw new ChikChakException("Report has already been resolved");
+        }
+    }
+
+    private void markReportResolved(ContentReport report, ReportStatus status, String note) {
+        report.setStatus(status);
+        report.setResolutionNote(note);
+        report.setResolvedBy(authService.getCurrentUserEntity().getEmail());
+        report.setResolvedAt(LocalDateTime.now());
+        contentReportRepository.save(report);
+    }
+
+    private ReportDto toReportDto(ContentReport report) {
+        return ReportDto.builder()
+                .id(report.getId())
+                .reporterId(report.getReporter().getId())
+                .reporterName(report.getReporter().getFullName())
+                .reportedUserId(report.getReportedUser().getId())
+                .reportedUserName(report.getReportedUser().getFullName())
+                .chatMessageId(report.getChatMessageId())
+                .ratingId(report.getRatingId())
+                .reason(report.getReason())
+                .status(report.getStatus())
+                .resolutionNote(report.getResolutionNote())
+                .resolvedBy(report.getResolvedBy())
+                .resolvedAt(report.getResolvedAt())
+                .createdAt(report.getCreatedAt())
+                .build();
     }
 
     private TechnicianProfile findTechnicianById(Long technicianId) {

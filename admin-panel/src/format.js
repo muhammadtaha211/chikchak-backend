@@ -63,3 +63,17 @@ export const BOOKING_STATUSES = [
 export const USER_ROLES = ['CUSTOMER', 'TECHNICIAN', 'ADMIN'];
 
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION'];
+
+// Mirrors the backend ReportStatus enum.
+export const REPORT_STATUSES = ['OPEN', 'DISMISSED', 'ACTIONED'];
+
+export function reportStatusColor(status) {
+  switch (status) {
+    case 'OPEN':
+      return 'warning';
+    case 'ACTIONED':
+      return 'success';
+    default:
+      return 'default';
+  }
+}

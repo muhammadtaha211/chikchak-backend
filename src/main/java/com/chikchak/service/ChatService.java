@@ -15,9 +15,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +32,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final UserBlockRepository userBlockRepository;
     private final TechnicianProfileRepository technicianProfileRepository;
     private final AuthService authService;
     private final BookingMapper bookingMapper;
@@ -56,6 +59,14 @@ public class ChatService {
 
         // Validate user can send message to this chat
         validateChatAccess(chat, currentUser);
+
+        // Reject if either party has blocked the other (admins are exempt — they moderate)
+        if (currentUser.getRole() != UserRole.ADMIN) {
+            Long otherId = otherParticipantId(chat, currentUser);
+            if (userBlockRepository.existsBlockBetween(currentUser.getId(), otherId)) {
+                throw new ChikChakException("You can no longer message this user because one of you has blocked the other.");
+            }
+        }
 
         ChatMessage message = ChatMessage.builder()
                 .chat(chat)
@@ -223,7 +234,17 @@ public class ChatService {
 
     public List<ChatDto> getUserChats() {
         User currentUser = authService.getCurrentUserEntity();
-        return toChatDtos(chatRepository.findChatsForUser(currentUser.getId()), currentUser);
+        List<Chat> chats = chatRepository.findChatsForUser(currentUser.getId());
+
+        // Hide conversations with users blocked in either direction
+        Set<Long> blockedRelated = new HashSet<>(userBlockRepository.findRelatedUserIds(currentUser.getId()));
+        if (!blockedRelated.isEmpty()) {
+            chats = chats.stream()
+                    .filter(chat -> !blockedRelated.contains(otherParticipantId(chat, currentUser)))
+                    .collect(Collectors.toList());
+        }
+
+        return toChatDtos(chats, currentUser);
     }
 
     public List<ChatDto> getActiveChatsForUser() {
@@ -275,6 +296,13 @@ public class ChatService {
                 .otherParticipant(userMapper.toDto(otherParticipant))
                 .createdAt(chat.getCreatedAt())
                 .build();
+    }
+
+    // Id of the participant in this chat who is NOT the given user
+    private Long otherParticipantId(Chat chat, User user) {
+        return chat.getCustomer().getId().equals(user.getId())
+                ? chat.getTechnician().getId()
+                : chat.getCustomer().getId();
     }
 
     private void validateChatAccess(Chat chat, User user) {
