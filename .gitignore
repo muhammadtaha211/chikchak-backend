@@ -40,3 +40,8 @@ application-local.properties
 !.env.example
 *.pem
 *.key
+.mcp.json
+
+### ASO screenshot skill output ###
+screenshots/
+screenshots-android/

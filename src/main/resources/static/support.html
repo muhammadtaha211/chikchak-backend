@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Takin Support</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --ink: #1c2733;
+      --muted: #5b6b7b;
+      --line: #e2e8f0;
+      --brand: #0e7c66;
+      --brand-dark: #0a5e4d;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 72px; }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .brand .dot {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--brand); color: #fff; font-weight: 700;
+      display: grid; place-items: center; font-size: 18px;
+    }
+    .brand strong { font-size: 20px; letter-spacing: .2px; }
+    h1 { font-size: 28px; margin: 0 0 6px; }
+    h2 { font-size: 19px; margin: 30px 0 8px; padding-top: 6px; }
+    p, li { margin: 0 0 12px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    .updated { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 8px 26px 18px; margin-top: 14px;
+    }
+    a { color: var(--brand-dark); }
+    .muted { color: var(--muted); }
+    .callout {
+      background: #eaf5f1; border: 1px solid #bfe3d6; border-radius: 10px;
+      padding: 16px 18px; margin: 14px 0;
+    }
+    .email { font-size: 18px; font-weight: 700; }
+    footer { margin-top: 32px; font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">
+      <span class="dot">T</span>
+      <strong>Takin</strong>
+    </div>
+
+    <h1>Support</h1>
+    <p class="updated">Takin — home-services marketplace</p>
+
+    <div class="card">
+      <h2>Need help?</h2>
+      <p>
+        We're happy to help with anything related to the Takin app — booking issues, your account,
+        technicians, or general questions. Email us and we'll get back to you, usually within
+        <strong>1–2 business days</strong>.
+      </p>
+
+      <div class="callout">
+        <p style="margin:0 0 4px;">Contact our support team:</p>
+        <a class="email" href="mailto:takinsupport@gmail.com">takinsupport@gmail.com</a>
+      </div>
+
+      <h2>Common requests</h2>
+      <ul>
+        <li><strong>Delete your account or data:</strong> use our
+          <a href="/delete-account.html">account &amp; data deletion page</a>, or do it in the app
+          (Settings &rarr; Delete Account).</li>
+        <li><strong>Trouble with a booking:</strong> include your booking number and a short description
+          so we can help faster.</li>
+        <li><strong>Account access:</strong> tell us the email address on your account.</li>
+      </ul>
+
+      <h2>More information</h2>
+      <p>
+        See our <a href="/privacy-policy.html">Privacy Policy</a> and
+        <a href="/terms-of-service.html">Terms of Service</a>.
+      </p>
+    </div>
+
+    <footer>
+      <p>&copy; <span id="year"></span> Takin</p>
+    </footer>
+  </main>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
