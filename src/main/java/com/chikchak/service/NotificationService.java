@@ -60,7 +60,7 @@ public class NotificationService {
                 booking.getCustomer().getEmail(), booking.getBookingNumber());
 
         sendPush(booking.getCustomer(), "ההזמנה נדחתה",
-                "בעל המקצוע דחה את ההזמנה. אנא בחר את אופן קבלת ההחזר.",
+                "בעל המקצוע דחה את ההזמנה.",
                 bookingData(booking, "BOOKING_DECLINED"));
     }
 
@@ -136,7 +136,7 @@ public class NotificationService {
         }
 
         sendPush(booking.getCustomer(), "ההזמנה בוטלה",
-                "ההזמנה שלך בוטלה. ההחזר יטופל בהקדם.",
+                "ההזמנה שלך בוטלה.",
                 bookingData(booking, "BOOKING_CANCELLED"));
     }
 
