@@ -2,8 +2,11 @@ package com.chikchak.controller;
 
 import com.chikchak.dto.AccountDeletionRequestDto;
 import com.chikchak.dto.ApiResponse;
+import com.chikchak.dto.TechnicianSearchRequest;
+import com.chikchak.dto.TechnicianSearchResponse;
 import com.chikchak.model.ServiceType;
 import com.chikchak.service.DataDeletionService;
+import com.chikchak.service.TechnicianService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +29,7 @@ import java.util.List;
 public class PublicController {
 
     private final DataDeletionService dataDeletionService;
+    private final TechnicianService technicianService;
 
     @GetMapping("/services")
     @Operation(summary = "Get service types", description = "Returns the list of supported service type enum values")
@@ -40,6 +44,18 @@ public class PublicController {
     @Operation(summary = "Health check", description = "API health check endpoint")
     public ResponseEntity<ApiResponse<String>> healthCheck() {
         return ResponseEntity.ok(ApiResponse.success("ChikChak API is running", "OK"));
+    }
+
+    @PostMapping("/search-technicians")
+    @Operation(summary = "Search technicians (guest)",
+            description = "Guest-accessible technician search — no JWT required. Block filtering is "
+                    + "not applied (there is no caller to filter against) and the results are stripped "
+                    + "of technician PII. Authenticated customers should use "
+                    + "POST /api/customer/search-technicians, which also hides blocked technicians.")
+    public ResponseEntity<ApiResponse<TechnicianSearchResponse>> searchTechnicians(
+            @Valid @RequestBody TechnicianSearchRequest request) {
+        TechnicianSearchResponse response = technicianService.searchTechniciansForGuest(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/account-deletion-request")

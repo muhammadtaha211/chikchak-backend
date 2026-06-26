@@ -31,7 +31,26 @@ public class TechnicianService {
     private final PricingService pricingService;
     private final UserBlockRepository userBlockRepository;
 
+    /**
+     * Authenticated customer search: hides technicians the caller has blocked (or who have
+     * blocked the caller), in either direction, and returns full technician profiles.
+     */
     public TechnicianSearchResponse searchTechnicians(TechnicianSearchRequest request) {
+        Long meId = authService.getCurrentUserEntity().getId();
+        Set<Long> blockedRelated = new HashSet<>(userBlockRepository.findRelatedUserIds(meId));
+        return buildSearchResponse(request, blockedRelated, false);
+    }
+
+    /**
+     * Guest search (no JWT): there is no caller to filter against, so blocking is not applied,
+     * and the results are stripped of technician PII (see {@link #sanitizePublicProfile}).
+     */
+    public TechnicianSearchResponse searchTechniciansForGuest(TechnicianSearchRequest request) {
+        return buildSearchResponse(request, Set.of(), true);
+    }
+
+    private TechnicianSearchResponse buildSearchResponse(TechnicianSearchRequest request,
+                                                         Set<Long> blockedRelated, boolean sanitize) {
         List<TechnicianProfile> technicians;
 
         if (request.getServiceType() != null && request.getLatitude() != null && request.getLongitude() != null) {
@@ -46,12 +65,6 @@ public class TechnicianService {
             technicians = technicianProfileRepository.findByIsVerifiedAndIsAvailable(true, true);
         }
 
-        // Hide technicians the current user has blocked (or who have blocked them), either
-        // direction. Guests (no JWT) have no block list, so this is skipped for them.
-        Set<Long> blockedRelated = authService.getCurrentUserEntityOptional()
-                .map(me -> new HashSet<Long>(userBlockRepository.findRelatedUserIds(me.getId())))
-                .orElseGet(HashSet::new);
-
         // Apply filters
         List<TechnicianProfileDto> technicianDtos = technicians.stream()
                 .filter(t -> applyFilters(t, request) && !blockedRelated.contains(t.getUser().getId()))
@@ -63,7 +76,9 @@ public class TechnicianService {
                                 t.getUser().getLatitude(), t.getUser().getLongitude()
                         ));
                     }
-                    sanitizePublicProfile(dto.getUser());
+                    if (sanitize) {
+                        sanitizePublicProfile(dto.getUser());
+                    }
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -80,8 +95,8 @@ public class TechnicianService {
     }
 
     /**
-     * Technician search is reachable by guests (no JWT), so the embedded user must not carry
-     * PII or financial data. Strip everything not needed to browse and pick a technician —
+     * Used by the guest search, which is reachable without a JWT, so the embedded user must not
+     * carry PII or financial data. Strip everything not needed to browse and pick a technician —
      * keep name, photo, city, rating, fees, distance; drop email, phone, exact address, exact
      * GPS coordinates and account credits. Values are blanked rather than removed so the JSON
      * shape the app already parses stays intact.

@@ -28,7 +28,6 @@ import com.chikchak.config.DataInitializer;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -177,26 +176,17 @@ public class AuthService {
     }
 
     public User getCurrentUserEntity() {
-        return getCurrentUserEntityOptional()
-                .orElseThrow(() -> new ChikChakException("User not authenticated"));
-    }
-
-    /**
-     * Non-throwing variant for endpoints that are reachable both with and without a JWT
-     * (e.g. the guest-accessible technician search). Returns empty for anonymous callers.
-     */
-    public Optional<User> getCurrentUserEntityOptional() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // AnonymousAuthenticationToken reports isAuthenticated() = true but its principal
         // is the String "anonymousUser" — without the instanceof check the cast below
         // throws ClassCastException (HTTP 500) on permitAll endpoints like /api/auth/me
         if (authentication == null || !authentication.isAuthenticated()
                 || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
-            return Optional.empty();
+            throw new ChikChakException("User not authenticated");
         }
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return Optional.of(userDetails.getUser());
+        return userDetails.getUser();
     }
 
     public UserDto updateProfile(UpdateProfileRequest request) {
