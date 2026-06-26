@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,9 +46,11 @@ public class TechnicianService {
             technicians = technicianProfileRepository.findByIsVerifiedAndIsAvailable(true, true);
         }
 
-        // Hide technicians the current user has blocked (or who have blocked them), either direction
-        Long meId = authService.getCurrentUserEntity().getId();
-        Set<Long> blockedRelated = new HashSet<>(userBlockRepository.findRelatedUserIds(meId));
+        // Hide technicians the current user has blocked (or who have blocked them), either
+        // direction. Guests (no JWT) have no block list, so this is skipped for them.
+        Set<Long> blockedRelated = authService.getCurrentUserEntityOptional()
+                .map(me -> new HashSet<Long>(userBlockRepository.findRelatedUserIds(me.getId())))
+                .orElseGet(HashSet::new);
 
         // Apply filters
         List<TechnicianProfileDto> technicianDtos = technicians.stream()
@@ -60,6 +63,7 @@ public class TechnicianService {
                                 t.getUser().getLatitude(), t.getUser().getLongitude()
                         ));
                     }
+                    sanitizePublicProfile(dto.getUser());
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -73,6 +77,25 @@ public class TechnicianService {
                 .totalPages((int) Math.ceil((double) technicianDtos.size() / request.getSize()))
                 .currentPage(request.getPage())
                 .build();
+    }
+
+    /**
+     * Technician search is reachable by guests (no JWT), so the embedded user must not carry
+     * PII or financial data. Strip everything not needed to browse and pick a technician —
+     * keep name, photo, city, rating, fees, distance; drop email, phone, exact address, exact
+     * GPS coordinates and account credits. Values are blanked rather than removed so the JSON
+     * shape the app already parses stays intact.
+     */
+    private void sanitizePublicProfile(UserDto user) {
+        if (user == null) {
+            return;
+        }
+        user.setEmail("");
+        user.setPhoneNumber("");
+        user.setAddress("");
+        user.setLatitude(0.0);
+        user.setLongitude(0.0);
+        user.setAccountCredits(BigDecimal.ZERO);
     }
 
     private boolean applyFilters(TechnicianProfile technician, TechnicianSearchRequest request) {

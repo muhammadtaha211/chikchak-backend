@@ -1,6 +1,7 @@
 package com.chikchak.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -56,6 +57,12 @@ public class SecurityConfig {
                         // Public legal & support pages (Google Play account-deletion + privacy policy
                         // + terms + App Store support URL) — must be reachable without login
                         .requestMatchers("/delete-account.html", "/privacy-policy.html", "/terms-of-service.html", "/support.html").permitAll()
+
+                        // Guest browsing: technician search is reachable without a JWT so guests can
+                        // see who's available before signing up. Must be listed BEFORE the broader
+                        // /api/customer/** rule below (first match wins). The response is sanitized of
+                        // technician PII (see TechnicianService.searchTechnicians).
+                        .requestMatchers(HttpMethod.POST, "/api/customer/search-technicians").permitAll()
 
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
