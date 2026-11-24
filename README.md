@@ -41,9 +41,9 @@ Takin is a mobile marketplace that connects people in Israel with verified home-
 - Search approved professionals by service and location, with or without an account
 - Book a two-hour time slot, accept a counter-proposed time, or cancel
 - Follow the job through every stage, chat with the professional and rate the work afterwards
-- Block or report other users, and delete their own account and data
+- Block or report other users, and delete their own account
 
-**Professionals**
+**Professionals** (technicians in the code)
 - Sign up and appear in search only after an admin approves them
 - Accept, decline or counter-propose a time for each request
 - Move a job through its stages, from on the way to completed
@@ -58,7 +58,7 @@ Takin is a mobile marketplace that connects people in Israel with verified home-
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
     App["Takin mobile app<br/>FlutterFlow, iOS and Android"]
     Panel["Admin panel<br/>React, Vite, Material UI"]
     Pages["Public legal and<br/>account-deletion pages"]
@@ -67,9 +67,9 @@ flowchart LR
         Limit["Rate-limit filter<br/>Bucket4j"] --> Auth["JWT filter<br/>Caffeine user cache"]
         Auth --> Rest["REST controllers<br/>DTO validation"]
         Rest --> Core["Services<br/>transactions and business rules"]
-        Jobs["Schedulers"] --> Core
+        Jobs["Schedulers<br/>timeouts and auto-confirm"] --> Core
         Core --> Repo["Spring Data JPA"]
-        Core --> Stomp["STOMP broker"]
+        Core --> Stomp["STOMP broker<br/>booking updates"]
     end
 
     App --> Limit
@@ -77,8 +77,6 @@ flowchart LR
     Pages --> Limit
     Repo --> Db[("PostgreSQL")]
     Core --> Firebase["Firebase<br/>push and phone verification"]
-    Stomp -. booking updates .-> App
-    Firebase -. push .-> App
 ```
 
 A conventional layered design: controllers validate and delegate, services own transactions and business rules, repositories hold the queries. Entities never leave the service layer. Requests and responses are DTOs, most of them mapped with MapStruct.
@@ -186,7 +184,7 @@ export ALLOWED_ORIGINS=http://localhost:5173
 sh mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
 ```
 
-The schema and the job catalog are created on first start. Firebase and SMTP are optional: without them, push notifications and emails are skipped. [`.env.example`](.env.example) lists every setting.
+The schema and the job catalog are created on first start. Firebase and SMTP are optional: without them, push notifications, password reset and operator emails are unavailable. [`.env.example`](.env.example) documents the main settings.
 
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - Health check: `http://localhost:8080/api/public/health`
