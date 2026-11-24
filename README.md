@@ -1,7 +1,7 @@
 # Takin (formerly ChikChak)
 
 > [!IMPORTANT]
-> **Takin and ChikChak are the same project.** The product started out as ChikChak and was later renamed **Takin**, the name it is published under on Google Play and the App Store. This repository (`chikchak-backend`) and the code inside it (for example the `com.chikchak` package) kept the original name. If you came here from a CV or job application that mentions **Takin**, you are in the right place.
+> **Takin and ChikChak are the same project.** The product started out as ChikChak and was later renamed **Takin**, the name it was released under on Google Play and the App Store. This repository (`chikchak-backend`) and the code inside it (for example the `com.chikchak` package) kept the original name. If you came here from a CV or job application that mentions **Takin**, you are in the right place.
 
 ![Java 17](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot 3.2](https://img.shields.io/badge/Spring_Boot-3.2-6DB33F?logo=springboot&logoColor=white)
@@ -12,13 +12,13 @@
 
 Takin is a mobile marketplace that connects people in Israel with verified home-service professionals: plumbers, electricians, AC technicians, movers, cleaners and more. Customers find a professional nearby, book a time slot, chat, follow the job to completion and leave a rating. Professionals receive requests, negotiate times and run their jobs from the same app.
 
-**The app is live on Google Play and the Apple App Store.** This repository contains its backend API and its admin web panel.
+**The app was released on Google Play and the Apple App Store.** This repository contains its backend API and its admin web panel.
 
 ## At a glance
 
 | | |
 |---|---|
-| **Status** | In production, published on Google Play and the App Store |
+| **Released on** | Google Play and the Apple App Store |
 | **My role** | Solo developer: backend, database, admin panel, mobile app, deployment and store releases |
 | **Backend** | Java 17, Spring Boot 3.2, Spring Security, Spring Data JPA / Hibernate, PostgreSQL |
 | **Real time and push** | WebSocket / STOMP, Firebase Cloud Messaging |
@@ -223,6 +223,6 @@ chikchak-backend/
 
 ## Scope and trade-offs
 
-- **Payments are switched off on purpose.** Takin is currently free for customers and professionals. The pricing, escrow and refund code is groundwork for a later phase and is not connected to a payment provider.
+- **Payments are switched off on purpose.** Takin launched free for customers and professionals. The pricing, escrow and refund code is groundwork for a later phase and is not connected to a payment provider.
 - **Rate-limit buckets and the auth cache live in process memory.** That fits a single instance. Running several replicas would mean moving them to a shared store such as Redis.
 - **The mobile app is a separate FlutterFlow project**, so its source is not part of this repository.
